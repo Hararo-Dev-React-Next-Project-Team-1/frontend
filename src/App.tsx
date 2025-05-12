@@ -1,12 +1,12 @@
-import './App.css'
-
+import './App.css';
+import Header from './components/Header';
 function App() {
-
   return (
     <>
-      <div className='w-full h-12 bg-black text-white'>tailwind 적용</div>
+      <Header />
+      <div className='mt-20'></div>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
