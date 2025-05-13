@@ -1,8 +1,7 @@
 const HomePage = () => {
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>HomePage</h1>
-      <p>pages/index.tsx</p>
+    <div className=" w-full flex items-center justify-center border-blue-950 border-2">
+      <div></div>
     </div>
   );
 };
