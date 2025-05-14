@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import Layout from '../Layout.tsx'; // 새로 만든 Layout
+import Layout from '../Layout.tsx';
 import HomePage from '../pages/index';
 import Test from '../pages/test.tsx';
 
