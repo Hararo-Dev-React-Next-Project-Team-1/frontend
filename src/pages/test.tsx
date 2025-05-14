@@ -1,4 +1,4 @@
-// Header Test Page
+// Room Test Page
 import RoomHeader from '../components/RoomHeader';
 import ChatInput from '../components/ChatInput.tsx';
 import RoomFooter from '../components/RoomFooter';
@@ -28,11 +28,11 @@ const TestPage = () => {
     // Todo : 라이브 재생 기능
     setLive(true);
   };
-
+  // 닫기 버튼 클릭
   const closeClick = () => {
     console.log('closeClick');
   };
-
+  // view as participant 버튼 클릭
   const viewClick = () => {
     console.log('viewClick');
   };
