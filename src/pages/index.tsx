@@ -25,29 +25,22 @@ const HomePage = () => {
     if (roomTitle.toString().length === 0) {
       setTitleError(true);
     } else {
-      // Todo : 페이지 이동 처리
+      // Todo : 요청 페이지 이동 처리
       alert('성공');
     }
   };
 
   const enterBtn = () => {
     if (
-      roomCode.toString().length === 0 ||
+      roomCode.toString().length !== 4 ||
       Number.isNaN(parseInt(roomCode.toString()))
     ) {
       setCodeError(true);
     } else {
-      // Todo : 페이지 이동 처리
+      // Todo : 요청 페이지 이동 처리
       alert('성공');
     }
   };
-
-  // useEffect(() => {
-  //   console.log('roomTitle', roomTitle);
-  // }, [roomTitle]);
-  // useEffect(() => {
-  //   console.log('roomCode', roomCode);
-  // }, [roomCode]);
 
   return (
     <div className="w-full flex items-center justify-center py-20">
@@ -102,7 +95,7 @@ const HomePage = () => {
                 label="입장 코드"
                 placeholder="입장 코드를 입력해주세요."
                 onChange={setRoomCode}
-                errorContent={'입장 코드를 입력해주세요.'}
+                errorContent="입장 코드를 정확히 입력해주세요. (숫자 4자리)"
                 errorState={codeError}
                 changeState={setCodeError}
               />
