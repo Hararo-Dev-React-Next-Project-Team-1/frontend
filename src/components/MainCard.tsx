@@ -8,8 +8,7 @@ type Props = {
 const MainCard = ({ selected, content, children }: Props) => {
   return (
     <div
-      className={`
-    w-1/2 flex flex-col items-center justify-end gap-8 pt-20 pb-12 rounded-xl
+      className={`w-1/2 flex flex-col items-center justify-end gap-8 pt-30 pb-12 rounded-xl
     border-4 border-[var(--color-primary)] relative transition-colors duration-300
     ${
       selected
