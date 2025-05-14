@@ -6,6 +6,6 @@
   ],
   "compilerOptions":
   {
-    "types": ["vite-plugin-svgr/client"] // 이부분 추가
+    "types": ["vite-plugin-svgr/client"]
   }
 }
