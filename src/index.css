@@ -9,6 +9,8 @@ body {
   }
   --color-primary: #33c4a8;
   --color-gray: #d9d9d9;
+  --color-gray-2: #737373;
+  --color-error: #ed4337;
 }
 
 @font-face {
