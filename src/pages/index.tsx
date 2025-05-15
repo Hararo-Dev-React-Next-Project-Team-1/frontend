@@ -4,6 +4,7 @@ import EnterIcon from '../assets/EnterIcon.tsx';
 import AddIcon from '../assets/AddIcon.tsx';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
+import { createRoom } from '../apis/room.ts';
 
 const HomePage = () => {
   const [selected, setSelected] = useState<boolean>(true);
@@ -26,7 +27,7 @@ const HomePage = () => {
       setTitleError(true);
     } else {
       // Todo : 요청 페이지 이동 처리
-      alert('성공');
+      createRoom(roomTitle, fileName);
     }
   };
 
@@ -80,7 +81,11 @@ const HomePage = () => {
                 inputType="file"
                 label="파일 이름"
                 placeholder="파일 이름"
-                onChange={setFileName}
+                onChange={(file) => {
+                  if (file instanceof File) {
+                    setFileName(file);
+                  }
+                }}
                 errorContent=""
                 errorState={false}
                 changeState={setFileError}
