@@ -4,7 +4,7 @@ import EnterIcon from '../assets/EnterIcon.tsx';
 import AddIcon from '../assets/AddIcon.tsx';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
-import { createRoom } from '../apis/room.ts';
+import { createRoom, testAPI } from '../apis/room.ts';
 
 const HomePage = () => {
   const [selected, setSelected] = useState<boolean>(true);
@@ -22,12 +22,12 @@ const HomePage = () => {
     setSelected(false);
   };
 
-  const makeBtn = () => {
+  const makeBtn = async () => {
     if (roomTitle.toString().length === 0) {
       setTitleError(true);
     } else {
       // Todo : 요청 페이지 이동 처리
-      createRoom(roomTitle, fileName);
+      await createRoom(roomTitle, fileName);
     }
   };
 
