@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import RoomHeader from '../components/RoomHeader';
 import Sorting from '../assets/Sorting.svg?react';
 import RoomFooter from '../components/RoomFooter';
+import Link from '../assets/Link.svg?react';
 
 const RoomAdmin = () => {
   const [userChat, setUserChat] = useState('');
@@ -45,14 +46,31 @@ const RoomAdmin = () => {
         <RoomHeader title={'Hooks 파헤치기'} roomCode={1234} />
         {/* 정렬 및 질문 수 */}
         <div className="w-full flex justify-between items-center text-[16px] text-[#737373]">
-          <div
-            className="rounded-xl flex items-center relative
-          px-12 py-3 font-medium border border-[#CFCFCF] cursor-pointer"
-          >
-            <Sorting className="absolute left-7" />
-            <span>Recent</span>
+          <div className="flex items-center gap-6">
+            <div
+              className="rounded-xl flex items-center relative
+              px-14 py-3 font-medium border border-[#CFCFCF] cursor-pointer"
+            >
+              <Sorting className="absolute left-7" />
+              <span>Recent</span>
+            </div>
+            <div
+              className="rounded-xl flex items-center relative text-[#289983]
+              px-15 py-3 font-medium border border-[var(--color-primary)] cursor-pointer"
+            >
+              <Link className="absolute left-7" />
+              <span>자료 다운로드</span>
+            </div>
           </div>
           <span className="font-semibold">{QCount} Questions</span>
+        </div>
+        <div className="w-full flex flex-col items-center gap-8 border-2 border-black">
+          <div className="w-full border-2 border-black">
+            Chat Component 자리
+          </div>
+          <div className="w-full border-2 border-black">
+            Chat Component 자리
+          </div>
         </div>
       </div>
       <div className="w-4/5">
