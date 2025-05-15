@@ -17,7 +17,7 @@ export const Question = () => {
   return (
     <div
       onClick={handleBoxClick}
-      className={`mt-32 flex flex-row w-[900px] h-fit py-4 px-8 rounded-2xl shadow-[0_0_4px_1px_rgba(51,196,168,0.75)] 
+      className={`flex flex-row w-full h-fit py-4 px-8 rounded-2xl shadow-[0_0_4px_1px_rgba(51,196,168,0.75)] 
         ${selectedBox ? 'bg-[#E1F4F0]' : 'bg-white'}
         ${isAdmin ? 'cursor-pointer' : ''}
       `}
