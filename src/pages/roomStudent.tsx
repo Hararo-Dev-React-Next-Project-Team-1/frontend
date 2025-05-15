@@ -3,6 +3,7 @@ import RoomHeader from '../components/RoomHeader.tsx';
 import Sorting from '../assets/Sorting.svg?react';
 import ChatInput from '../components/ChatInput.tsx';
 import Link from '../assets/Link.svg?react';
+import { Question } from '../components/Question.tsx';
 
 const RoomStudent = () => {
   const [userChat, setUserChat] = useState('');
@@ -62,13 +63,9 @@ const RoomStudent = () => {
             </div>
             <span className="font-semibold">{QCount} Questions</span>
           </div>
-          <div className="w-full flex flex-col items-center gap-8 border-2 border-black">
-            <div className="w-full border-2 border-black">
-              Chat Component 자리
-            </div>
-            <div className="w-full border-2 border-black">
-              Chat Component 자리
-            </div>
+          <div className="w-full flex flex-col items-center gap-6">
+            <Question />
+            <Question />
           </div>
         </div>
       </div>
