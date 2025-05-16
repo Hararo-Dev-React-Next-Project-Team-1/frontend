@@ -1,11 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import RoomHeader from '../components/RoomHeader';
 import Sorting from '../assets/Sorting.svg?react';
 import RoomFooter from '../components/RoomFooter';
 import Link from '../assets/Link.svg?react';
 import { Question } from '../components/Question';
 import { useSearchParams } from 'react-router-dom';
-import { getRoomInfo } from '../apis/room.ts';
+import { getRoomInfo, downloadFile } from '../apis/room.ts';
+
+type Room = {
+  id: string | null;
+  code: string;
+  title: string;
+  created_at: string;
+  file_name: string;
+};
 
 const RoomAdmin = () => {
   const dumpData = [
@@ -38,33 +46,46 @@ const RoomAdmin = () => {
       likes: 17,
     },
   ];
-
   const [userChat, setUserChat] = useState('');
   const [isLive, setLive] = useState(false);
-  const [roomTitle, setRoomTitle] = useState('강의 제목');
-  const [roomDate, setRoomDate] = useState('');
+  const [roomInfo, setRoomInfo] = useState<Room>({
+    id: '-1',
+    code: '-1',
+    title: '강의 제목',
+    created_at: '',
+    file_name: '',
+  });
   const [searchParams] = useSearchParams();
 
   const roomId = searchParams.get('room-id');
   const enterCode = searchParams.get('enter-code');
 
-  useEffect(() => {
-    console.log('userChat : ', userChat);
-  }, [userChat]);
-
-  const fetchRoomInfo = async () => {
-    if (enterCode) {
-      const res = await getRoomInfo(enterCode);
-      if (res) {
-        setRoomTitle(res.title);
-        setRoomDate(res.created_at);
-      }
-      console.log(res);
+  const clickDown = async () => {
+    if (roomId) {
+      console.log('roomId', roomId);
+      await downloadFile(roomId, roomInfo.file_name);
     }
   };
+
   useEffect(() => {
+    const fetchRoomInfo = async () => {
+      if (enterCode) {
+        const res = await getRoomInfo(enterCode);
+        if (res) {
+          setRoomInfo((prev) => ({
+            ...prev,
+            id: roomId,
+            code: enterCode,
+            title: res.title,
+            created_at: res.created_at,
+            file_name: res.file_name,
+          }));
+        }
+      }
+    };
+
     fetchRoomInfo();
-  }, [enterCode]);
+  }, [enterCode, roomId]);
 
   const sendChat = () => {
     if (userChat.length == 0) {
@@ -95,7 +116,11 @@ const RoomAdmin = () => {
         className="w-4/5 min-h-[600px] py-8 px-8 flex flex-col items-center
     shadow-[0px_3px_10px_rgba(0,0,0,0.25)] rounded-2xl gap-8"
       >
-        <RoomHeader title={roomTitle} dateStr={roomDate} roomCode={enterCode} />
+        <RoomHeader
+          title={roomInfo.title}
+          dateStr={roomInfo.created_at}
+          roomCode={enterCode}
+        />
         {/* 정렬 및 질문 수 */}
         <div className="w-full flex justify-between items-center text-[16px] text-[#737373]">
           <div className="flex items-center gap-6">
@@ -109,6 +134,7 @@ const RoomAdmin = () => {
             <div
               className="rounded-xl flex items-center relative text-[#289983]
               px-15 py-3 font-medium border border-[var(--color-primary)] cursor-pointer"
+              onClick={() => clickDown()}
             >
               <Link className="absolute left-7" />
               <span>자료 다운로드</span>
