@@ -6,9 +6,38 @@ import Link from '../assets/Link.svg?react';
 import { Question } from '../components/Question.tsx';
 
 const RoomStudent = () => {
-  const [userChat, setUserChat] = useState('');
+  const dumpData = [
+    {
+      question_id: 1,
+      text: '프론트엔드와 백엔드의 가장 큰 차이점은 무엇인가요?',
+      created_at: '2025-05-16T09:00:00Z',
+      is_selected: false,
+      likes: 12,
+    },
+    {
+      question_id: 2,
+      text: 'React에서 상태 관리를 어떤 방식으로 하나요?',
+      created_at: '2025-05-16T09:15:00Z',
+      is_selected: true,
+      likes: 25,
+    },
+    {
+      question_id: 3,
+      text: 'CORS 에러는 왜 발생하고 어떻게 해결하나요?',
+      created_at: '2025-05-16T09:30:00Z',
+      is_selected: false,
+      likes: 8,
+    },
+    {
+      question_id: 4,
+      text: 'TypeScript의 유틸리티 타입 중 가장 자주 쓰는 것은?',
+      created_at: '2025-05-16T09:45:00Z',
+      is_selected: false,
+      likes: 17,
+    },
+  ];
 
-  const [QCount, setQCount] = useState(2);
+  const [userChat, setUserChat] = useState('');
   const [isLive, setLive] = useState(false);
 
   useEffect(() => {
@@ -61,11 +90,16 @@ const RoomStudent = () => {
                 <span>자료 다운로드</span>
               </div>
             </div>
-            <span className="font-semibold">{QCount} Questions</span>
+            <span className="font-semibold">{dumpData.length} Questions</span>
           </div>
           <div className="w-full flex flex-col items-center gap-6">
-            <Question />
-            <Question />
+            {dumpData?.map((question) => (
+              <Question
+                key={question.question_id}
+                {...question}
+                isAdmin={false}
+              />
+            ))}
           </div>
         </div>
       </div>
