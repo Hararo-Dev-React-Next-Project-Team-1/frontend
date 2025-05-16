@@ -4,7 +4,7 @@ import EnterIcon from '../assets/EnterIcon.tsx';
 import AddIcon from '../assets/AddIcon.tsx';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
-import { createRoom } from '../apis/room.ts';
+import { createRoom, enterRoom } from '../apis/room.ts';
 import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
@@ -50,7 +50,7 @@ const HomePage = () => {
     }
   };
 
-  const enterBtn = () => {
+  const enterBtn = async () => {
     if (
       roomCode.toString().length !== 4 ||
       Number.isNaN(parseInt(roomCode.toString()))
@@ -58,7 +58,14 @@ const HomePage = () => {
       setCodeError(true);
     } else {
       // Todo : 요청 페이지 이동 처리
-      alert('성공');
+      try {
+        const res = await enterRoom(roomCode.toString());
+        setEnterDisabled(true);
+        navigate(`/room-student?room-id=${res.room_id}&enter-code=${res.code}`);
+      } catch (e) {
+        console.error(e);
+        setEnterDisabled(false);
+      }
     }
   };
 
