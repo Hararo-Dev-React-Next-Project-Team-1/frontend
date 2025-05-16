@@ -1,10 +1,11 @@
 type Props = {
   title: string;
-  roomCode: number;
+  dateStr: string;
+  roomCode: string | null;
 };
 
-const RoomHeader = ({ title, roomCode }: Props) => {
-  const date = new Date();
+const RoomHeader = ({ title, roomCode, dateStr }: Props) => {
+  const date = new Date(dateStr);
   const formatted = date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',

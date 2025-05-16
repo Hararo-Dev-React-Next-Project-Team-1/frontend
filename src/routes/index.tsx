@@ -19,7 +19,7 @@ const router = createBrowserRouter([
         element: <Test />,
       },
       {
-        path: '/room-admin/*',
+        path: '/room-admin',
         element: <RoomAdmin />,
       },
       {

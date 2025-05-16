@@ -1,19 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MainCard from '../components/MainCard';
 import EnterIcon from '../assets/EnterIcon.tsx';
 import AddIcon from '../assets/AddIcon.tsx';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
-import { createRoom, testAPI } from '../apis/room.ts';
+import { createRoom } from '../apis/room.ts';
+import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
   const [selected, setSelected] = useState<boolean>(true);
   const [roomTitle, setRoomTitle] = useState<string>('');
   const [titleError, setTitleError] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string | File>('');
-  const [, setFileError] = useState<boolean>(false);
+  const [fileError, setFileError] = useState<boolean>(false);
   const [roomCode, setRoomCode] = useState<string | File>('');
   const [codeError, setCodeError] = useState<boolean>(false);
+  // 중복 요청 방지
+  const [createDisabled, setCreateDisabled] = useState<boolean>(false);
+  const [enterDisabled, setEnterDisabled] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   const makeClick = () => {
     setSelected(true);
@@ -21,14 +26,27 @@ const HomePage = () => {
   const enterClick = () => {
     setSelected(false);
   };
+  useEffect(() => {
+    console.log('fileError : ', fileError);
+  }, [fileError]);
 
   const makeBtn = async () => {
-    if (roomTitle.toString().length === 0) {
-      setTitleError(true);
+    if (roomTitle.toString().length === 0 || !fileName) {
+      if (roomTitle.toString().length === 0) {
+        setTitleError(true);
+      }
+      if (!fileName) {
+        setFileError(true);
+      }
     } else {
-      // Todo : 요청 페이지 이동 처리
-      const res = await createRoom(roomTitle, fileName);
-      console.log(res);
+      try {
+        const res = await createRoom(roomTitle, fileName);
+        setCreateDisabled(true);
+        navigate(`/room-admin?room-id=${res.room_id}&enter-code=${res.code}`);
+      } catch (e) {
+        console.error(e);
+        setCreateDisabled(false);
+      }
     }
   };
 
@@ -72,7 +90,11 @@ const HomePage = () => {
                 inputType="text"
                 label="* 방 이름"
                 placeholder="방 이름"
-                onChange={setRoomTitle}
+                onChange={(value) => {
+                  if (typeof value === 'string') {
+                    setRoomTitle(value);
+                  }
+                }}
                 errorContent={'방 제목을 입력해주세요.'}
                 errorState={titleError}
                 changeState={setTitleError}
@@ -80,18 +102,22 @@ const HomePage = () => {
               <CustomInput
                 key="fileName"
                 inputType="file"
-                label="파일 이름"
+                label="* 파일 이름"
                 placeholder="파일 이름"
                 onChange={(file) => {
                   if (file instanceof File) {
                     setFileName(file);
                   }
                 }}
-                errorContent=""
-                errorState={false}
+                errorContent={'강의 자료를 업로드해주세요.'}
+                errorState={fileError}
                 changeState={setFileError}
               />
-              <CustomButton text="방 만들기" onClick={makeBtn} />
+              <CustomButton
+                text="방 만들기"
+                onClick={makeBtn}
+                disabled={createDisabled}
+              />
             </>
           ) : (
             <>
@@ -105,7 +131,11 @@ const HomePage = () => {
                 errorState={codeError}
                 changeState={setCodeError}
               />
-              <CustomButton text="입장하기" onClick={enterBtn} />
+              <CustomButton
+                text="입장하기"
+                onClick={enterBtn}
+                disabled={enterDisabled}
+              />
             </>
           )}
         </div>
