@@ -4,7 +4,8 @@ import EnterIcon from '../assets/EnterIcon.tsx';
 import AddIcon from '../assets/AddIcon.tsx';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
-import { createRoom, testAPI } from '../apis/room.ts';
+import { createRoom } from '../apis/room.ts';
+import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
   const [selected, setSelected] = useState<boolean>(true);
@@ -14,6 +15,10 @@ const HomePage = () => {
   const [, setFileError] = useState<boolean>(false);
   const [roomCode, setRoomCode] = useState<string | File>('');
   const [codeError, setCodeError] = useState<boolean>(false);
+  // 중복 요청 방지
+  const [createDisabled, setCreateDisabled] = useState<boolean>(false);
+  const [enterDisabled, setEnterDisabled] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   const makeClick = () => {
     setSelected(true);
@@ -26,9 +31,14 @@ const HomePage = () => {
     if (roomTitle.toString().length === 0) {
       setTitleError(true);
     } else {
-      // Todo : 요청 페이지 이동 처리
-      const res = await createRoom(roomTitle, fileName);
-      console.log(res);
+      try {
+        const res = await createRoom(roomTitle, fileName);
+        setCreateDisabled(true);
+        navigate(`/room-admin?room-id=${res.room_id}&enter-code=${res.code}`);
+      } catch (e) {
+        console.error(e);
+        setCreateDisabled(false);
+      }
     }
   };
 
@@ -91,7 +101,11 @@ const HomePage = () => {
                 errorState={false}
                 changeState={setFileError}
               />
-              <CustomButton text="방 만들기" onClick={makeBtn} />
+              <CustomButton
+                text="방 만들기"
+                onClick={makeBtn}
+                disabled={createDisabled}
+              />
             </>
           ) : (
             <>
@@ -105,7 +119,11 @@ const HomePage = () => {
                 errorState={codeError}
                 changeState={setCodeError}
               />
-              <CustomButton text="입장하기" onClick={enterBtn} />
+              <CustomButton
+                text="입장하기"
+                onClick={enterBtn}
+                disabled={enterDisabled}
+              />
             </>
           )}
         </div>

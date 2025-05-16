@@ -4,6 +4,8 @@ import Sorting from '../assets/Sorting.svg?react';
 import RoomFooter from '../components/RoomFooter';
 import Link from '../assets/Link.svg?react';
 import { Question } from '../components/Question';
+import { useSearchParams } from 'react-router-dom';
+import { getRoomInfo } from '../apis/room.ts';
 
 const RoomAdmin = () => {
   const dumpData = [
@@ -39,10 +41,30 @@ const RoomAdmin = () => {
 
   const [userChat, setUserChat] = useState('');
   const [isLive, setLive] = useState(false);
+  const [roomTitle, setRoomTitle] = useState('강의 제목');
+  const [roomDate, setRoomDate] = useState('');
+  const [searchParams] = useSearchParams();
+
+  const roomId = searchParams.get('room-id');
+  const enterCode = searchParams.get('enter-code');
 
   useEffect(() => {
     console.log('userChat : ', userChat);
   }, [userChat]);
+
+  const fetchRoomInfo = async () => {
+    if (enterCode) {
+      const res = await getRoomInfo(enterCode);
+      if (res) {
+        setRoomTitle(res.title);
+        setRoomDate(res.created_at);
+      }
+      console.log(res);
+    }
+  };
+  useEffect(() => {
+    fetchRoomInfo();
+  }, [enterCode]);
 
   const sendChat = () => {
     if (userChat.length == 0) {
@@ -73,7 +95,7 @@ const RoomAdmin = () => {
         className="w-4/5 min-h-[600px] py-8 px-8 flex flex-col items-center
     shadow-[0px_3px_10px_rgba(0,0,0,0.25)] rounded-2xl gap-8"
       >
-        <RoomHeader title={'Hooks 파헤치기'} roomCode={1234} />
+        <RoomHeader title={roomTitle} dateStr={roomDate} roomCode={enterCode} />
         {/* 정렬 및 질문 수 */}
         <div className="w-full flex justify-between items-center text-[16px] text-[#737373]">
           <div className="flex items-center gap-6">
