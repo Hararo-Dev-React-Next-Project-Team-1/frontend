@@ -8,7 +8,7 @@ import { createRoom, testAPI } from '../apis/room.ts';
 
 const HomePage = () => {
   const [selected, setSelected] = useState<boolean>(true);
-  const [roomTitle, setRoomTitle] = useState<string | File>('');
+  const [roomTitle, setRoomTitle] = useState<string>('');
   const [titleError, setTitleError] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string | File>('');
   const [, setFileError] = useState<boolean>(false);
@@ -27,7 +27,8 @@ const HomePage = () => {
       setTitleError(true);
     } else {
       // Todo : 요청 페이지 이동 처리
-      await createRoom(roomTitle, fileName);
+      const res = await createRoom(roomTitle, fileName);
+      console.log(res);
     }
   };
 
