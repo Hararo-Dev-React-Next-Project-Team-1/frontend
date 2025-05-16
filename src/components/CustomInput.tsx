@@ -29,6 +29,7 @@ const CustomInput = ({
     if (file) {
       setFileName(file.name);
       onChange(file);
+      changeState(() => false);
     }
   };
 
@@ -58,20 +59,31 @@ const CustomInput = ({
         </div>
       )}
       {inputType === 'file' && (
-        <label
-          htmlFor="file-upload"
-          className="flex-1 p-4 pl-4 border-2 border-[var(--color-gray)] rounded-md cursor-pointer
+        <div className="flex-1 flex flex-col justify-start ">
+          <label
+            htmlFor="file-upload"
+            className={`flex-1 p-4 pl-4 border-2 rounded-md cursor-pointer
            text-black
-           hover:border-[var(--color-primary)] transition-colors duration-200"
-        >
-          {fileName || placeholder}
-          <input
-            id="file-upload"
-            type="file"
-            className="hidden"
-            onChange={handleSetFileName}
-          />
-        </label>
+           hover:border-[var(--color-primary)] transition-colors duration-200
+           ${errorState ? 'border-[var(--color-error)]' : 'border-[var(--color-gray)]'}
+           `}
+          >
+            {fileName || placeholder}
+            <input
+              id="file-upload"
+              type="file"
+              className="hidden"
+              onChange={handleSetFileName}
+            />
+          </label>
+          <span
+            className={`text-sm text-[var(--color-error)] h-5 w-full text-start ${
+              errorState ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            * {errorContent}
+          </span>
+        </div>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MainCard from '../components/MainCard';
 import EnterIcon from '../assets/EnterIcon.tsx';
 import AddIcon from '../assets/AddIcon.tsx';
@@ -12,7 +12,7 @@ const HomePage = () => {
   const [roomTitle, setRoomTitle] = useState<string>('');
   const [titleError, setTitleError] = useState<boolean>(false);
   const [fileName, setFileName] = useState<string | File>('');
-  const [, setFileError] = useState<boolean>(false);
+  const [fileError, setFileError] = useState<boolean>(false);
   const [roomCode, setRoomCode] = useState<string | File>('');
   const [codeError, setCodeError] = useState<boolean>(false);
   // 중복 요청 방지
@@ -26,10 +26,18 @@ const HomePage = () => {
   const enterClick = () => {
     setSelected(false);
   };
+  useEffect(() => {
+    console.log('fileError : ', fileError);
+  }, [fileError]);
 
   const makeBtn = async () => {
-    if (roomTitle.toString().length === 0) {
-      setTitleError(true);
+    if (roomTitle.toString().length === 0 || !fileName) {
+      if (roomTitle.toString().length === 0) {
+        setTitleError(true);
+      }
+      if (!fileName) {
+        setFileError(true);
+      }
     } else {
       try {
         const res = await createRoom(roomTitle, fileName);
@@ -94,15 +102,15 @@ const HomePage = () => {
               <CustomInput
                 key="fileName"
                 inputType="file"
-                label="파일 이름"
+                label="* 파일 이름"
                 placeholder="파일 이름"
                 onChange={(file) => {
                   if (file instanceof File) {
                     setFileName(file);
                   }
                 }}
-                errorContent=""
-                errorState={false}
+                errorContent={'강의 자료를 업로드해주세요.'}
+                errorState={fileError}
                 changeState={setFileError}
               />
               <CustomButton

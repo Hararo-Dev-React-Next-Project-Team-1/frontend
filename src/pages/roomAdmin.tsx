@@ -62,7 +62,6 @@ const RoomAdmin = () => {
 
   const clickDown = async () => {
     if (roomId) {
-      console.log('roomId', roomId);
       await downloadFile(roomId, roomInfo.file_name);
     }
   };
