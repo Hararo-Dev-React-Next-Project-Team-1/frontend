@@ -70,7 +70,11 @@ const RoomStudent = () => {
   return (
     <div className="w-full flex flex-col items-center py-20 gap-12">
       <div className="w-4/5 flex flex-col items-center gap-20">
-        <RoomHeader title={'Hooks 파헤치기'} roomCode={1234} />
+        <RoomHeader
+          title={'Hooks 파헤치기'}
+          dateStr={'2025-05-16 14:27:09'}
+          roomCode={'1234'}
+        />
         <ChatInput onChange={setUserChat} sendChat={sendChat} />
         <div className="w-full flex flex-col items-center gap-6">
           <div className="w-full flex justify-between items-center text-[16px] text-[#737373]">
