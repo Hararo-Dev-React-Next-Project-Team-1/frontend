@@ -82,7 +82,11 @@ const HomePage = () => {
                 inputType="text"
                 label="* 방 이름"
                 placeholder="방 이름"
-                onChange={setRoomTitle}
+                onChange={(value) => {
+                  if (typeof value === 'string') {
+                    setRoomTitle(value);
+                  }
+                }}
                 errorContent={'방 제목을 입력해주세요.'}
                 errorState={titleError}
                 changeState={setTitleError}
