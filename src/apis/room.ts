@@ -45,3 +45,8 @@ export const downloadFile = async (roomId: string, fileName: string) => {
   document.body.removeChild(link);
   window.URL.revokeObjectURL(url);
 };
+
+export const exitRoom = async (roomId: string) => {
+  const response = await axios.delete(`/rooms/${roomId}`);
+  return response.data;
+};
