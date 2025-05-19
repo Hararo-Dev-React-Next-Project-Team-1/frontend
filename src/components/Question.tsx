@@ -3,7 +3,11 @@ import { DotsIcon } from '../assets/DotsIcon';
 import { ThumbIcon } from '../assets/ThumbIcon';
 import { UserIcon } from '../assets/UserIcon';
 import { EditQuestion } from './EditQuestion';
-import type { QuestionType } from '../apis/questions';
+import {
+  deleteQuestion,
+  editQuestion,
+  type QuestionType,
+} from '../apis/questions';
 
 interface QuestionProps extends QuestionType {
   isAdmin: boolean;
@@ -20,11 +24,47 @@ export const Question = ({
   const [isLiked, setIsLiked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [selectedBox, setSelectedBox] = useState(is_selected);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState(text);
 
   //선택한 질문 하이라이팅
   const handleBoxClick = () => {
     if (!isAdmin) return;
     setSelectedBox((prev) => !prev);
+  };
+
+  //수정 확인
+  const handleSave = async () => {
+    const result = await editQuestion(question_id, editedText);
+    // 실패
+    if (typeof result === 'string') {
+      alert(result);
+      return;
+    }
+
+    setEditedText(result.text);
+    setIsEditing(false);
+    setShowMenu(false);
+    //소켓 이벤트로 실시간 반영 → 이미 리스닝 중이라면 굳이 여기서 안 해도 됩니다.
+  };
+
+  //수정 취소
+  const handleCancel = () => {
+    setEditedText(text);
+    setIsEditing(false);
+    setShowMenu(false);
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('삭제하시겠습니까?')) return;
+
+    const res = await deleteQuestion(question_id);
+    if (res === '삭제 성공') {
+      //(소켓 이벤트로 UI 업데이트 or 로컬 상태 갱신)
+      setShowMenu(false);
+    } else {
+      alert(res);
+    }
   };
 
   return (
@@ -36,7 +76,7 @@ export const Question = ({
       `}
     >
       <div className="w-full h-full flex justify-between">
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 flex-1">
           <div className="flex flex-row gap-4 items-center">
             <div className="w-8 h-fit justify-center items-center ">
               <UserIcon />
@@ -48,9 +88,40 @@ export const Question = ({
               </p>
             </div>
           </div>
-          <div>{text}</div>
+          {isEditing ? (
+            <div className="flex items-center gap-2 w-full ">
+              <input
+                value={editedText}
+                onChange={(e) => setEditedText(e.target.value)}
+                className=" border-gray-500 border-1 px-2 py-1 rounded w-3/5"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSave();
+                  }}
+                  className="px-3 py-1 bg-[#33C4A8] text-white rounded"
+                >
+                  저장
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCancel();
+                  }}
+                  className="px-3 py-1 bg-gray-300 rounded"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>{text}</div>
+          )}
         </div>
-        {/* 좋아요, 수정 버튼 */}
+        {/* 좋아요, 더보기 버튼 */}
         <div className="flex flex-col items-end justify-between">
           {/* 좋아요 */}
           <div
@@ -71,13 +142,28 @@ export const Question = ({
               <ThumbIcon />
             </div>
           </div>
+          {/* 더보기 메뉴 */}
           {!isAdmin && (
             <div
-              onClick={() => setShowMenu((prev) => !prev)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu((v) => !v);
+              }}
               className="w-6 h-5 mr-2 cursor-pointer relative"
             >
               <DotsIcon />
-              {showMenu && <EditQuestion />}
+              {showMenu && (
+                <EditQuestion
+                  onEdit={(e) => {
+                    e.stopPropagation();
+                    setIsEditing(true);
+                  }}
+                  onDelete={(e) => {
+                    e.stopPropagation();
+                    handleDelete();
+                  }}
+                />
+              )}
             </div>
           )}
         </div>
