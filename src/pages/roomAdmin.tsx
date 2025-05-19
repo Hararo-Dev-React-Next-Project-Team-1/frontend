@@ -6,6 +6,7 @@ import Link from '../assets/Link.svg?react';
 import { Question } from '../components/Question';
 import { useSearchParams } from 'react-router-dom';
 import { getRoomInfo, downloadFile } from '../apis/room.ts';
+import { exitRoom } from '../apis/room.ts';
 
 type Room = {
   id: string | null;
@@ -101,8 +102,10 @@ const RoomAdmin = () => {
     setLive(true);
   };
   // 닫기 버튼 클릭
-  const closeClick = () => {
-    console.log('closeClick');
+  const closeClick = async () => {
+    if (roomId) {
+      await exitRoom(roomId);
+    }
   };
   // view as participant 버튼 클릭
   const viewClick = () => {
