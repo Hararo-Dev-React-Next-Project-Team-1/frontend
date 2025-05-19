@@ -4,6 +4,8 @@ import Sorting from '../assets/Sorting.svg?react';
 import ChatInput from '../components/ChatInput.tsx';
 import Link from '../assets/Link.svg?react';
 import { Question } from '../components/Question.tsx';
+import { postQuestion } from '../apis/questions.ts';
+import { useSearchParams } from 'react-router-dom';
 
 const RoomStudent = () => {
   const dumpData = [
@@ -36,6 +38,8 @@ const RoomStudent = () => {
       likes: 17,
     },
   ];
+  const [searchParams] = useSearchParams();
+  const roomId = searchParams.get('room-id');
 
   const [userChat, setUserChat] = useState('');
   const [isLive, setLive] = useState(false);
@@ -44,13 +48,19 @@ const RoomStudent = () => {
     console.log('userChat : ', userChat);
   }, [userChat]);
 
-  const sendChat = () => {
-    if (userChat.length == 0) {
-      return;
+  const sendChat = async () => {
+    if (userChat.trim().length == 0) return;
+
+    try {
+      const res = await postQuestion(Number(roomId), userChat);
+      console.log(res);
+
+      // socket.emit('question:posted')
+
+      setUserChat('');
+    } catch (error) {
+      console.error('질문 전송 실패:', error);
     }
-    // Todo : 채팅 추가 기능
-    console.log(userChat);
-    setUserChat('');
   };
 
   // Live 버튼 클릭
