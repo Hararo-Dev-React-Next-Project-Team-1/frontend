@@ -6,6 +6,15 @@ import Link from '../assets/Link.svg?react';
 import { Question } from '../components/Question.tsx';
 import { postQuestion } from '../apis/questions.ts';
 import { useSearchParams } from 'react-router-dom';
+import { downloadFile, getRoomInfo } from '../apis/room.ts';
+
+type Room = {
+  id: string | null;
+  code: string;
+  title: string;
+  created_at: string;
+  file_name: string;
+};
 
 const RoomStudent = () => {
   const dumpData = [
@@ -40,13 +49,44 @@ const RoomStudent = () => {
   ];
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get('room-id');
+  const enterCode = searchParams.get('enter-code');
 
   const [userChat, setUserChat] = useState('');
   const [isLive, setLive] = useState(false);
+  const [roomInfo, setRoomInfo] = useState<Room>({
+    id: '-1',
+    code: '-1',
+    title: '강의 제목',
+    created_at: '',
+    file_name: '',
+  });
 
+  // useEffect(() => {
+  //   console.log('roomId : ', roomId);
+  // }, [roomId]);
+  //
+  // useEffect(() => {
+  //   console.log('enterCode : ', enterCode);
+  // }, [enterCode]);
   useEffect(() => {
-    console.log('userChat : ', userChat);
-  }, [userChat]);
+    const fetchRoomInfo = async () => {
+      if (enterCode) {
+        const res = await getRoomInfo(enterCode);
+        if (res) {
+          setRoomInfo((prev) => ({
+            ...prev,
+            id: roomId,
+            code: enterCode,
+            title: res.title,
+            created_at: res.created_at,
+            file_name: res.file_name,
+          }));
+        }
+      }
+    };
+
+    fetchRoomInfo();
+  }, [enterCode, roomId]);
 
   const sendChat = async () => {
     if (userChat.trim().length == 0) return;
@@ -60,6 +100,12 @@ const RoomStudent = () => {
       setUserChat('');
     } catch (error) {
       console.error('질문 전송 실패:', error);
+    }
+  };
+
+  const clickDown = async () => {
+    if (roomId) {
+      await downloadFile(roomId, roomInfo.file_name);
     }
   };
 
@@ -83,7 +129,7 @@ const RoomStudent = () => {
         <RoomHeader
           title={'Hooks 파헤치기'}
           dateStr={'2025-05-16 14:27:09'}
-          roomCode={'1234'}
+          roomCode={enterCode}
         />
         <ChatInput onChange={setUserChat} sendChat={sendChat} />
         <div className="w-full flex flex-col items-center gap-6">
@@ -99,6 +145,7 @@ const RoomStudent = () => {
               <div
                 className="rounded-xl flex items-center relative text-[#289983]
               px-15 py-3 font-medium border border-[var(--color-primary)] cursor-pointer"
+                onClick={() => clickDown()}
               >
                 <Link className="absolute left-7" />
                 <span>자료 다운로드</span>
