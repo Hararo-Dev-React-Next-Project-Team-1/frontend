@@ -6,6 +6,7 @@ import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import { createRoom, enterRoom } from '../apis/room.ts';
 import { useNavigate } from 'react-router-dom';
+import { Cookies } from 'react-cookie';
 
 const HomePage = () => {
   const [selected, setSelected] = useState<boolean>(true);
@@ -19,6 +20,7 @@ const HomePage = () => {
   const [createDisabled, setCreateDisabled] = useState<boolean>(false);
   const [enterDisabled, setEnterDisabled] = useState<boolean>(false);
   const navigate = useNavigate();
+  const cookies = new Cookies();
 
   const makeClick = () => {
     setSelected(true);
@@ -42,7 +44,7 @@ const HomePage = () => {
       try {
         const res = await createRoom(roomTitle, fileName);
         setCreateDisabled(true);
-        navigate(`/room-admin?room-id=${res.room_id}&enter-code=${res.code}`);
+        // navigate(`/room-admin?room-id=${res.room_id}&enter-code=${res.code}`);
       } catch (e) {
         console.error(e);
         setCreateDisabled(false);
@@ -61,6 +63,7 @@ const HomePage = () => {
       try {
         const res = await enterRoom(roomCode.toString());
         setEnterDisabled(true);
+        cookies.set('visitore_id', res.visitor_id);
         navigate(`/room-student?room-id=${res.room_id}&enter-code=${res.code}`);
       } catch (e) {
         console.error(e);

@@ -7,6 +7,7 @@ import { Question } from '../components/Question.tsx';
 import { postQuestion } from '../apis/questions.ts';
 import { useSearchParams } from 'react-router-dom';
 import { downloadFile, getRoomInfo } from '../apis/room.ts';
+import { Cookies } from 'react-cookie';
 
 type Room = {
   id: string | null;
@@ -60,14 +61,16 @@ const RoomStudent = () => {
     created_at: '',
     file_name: '',
   });
+  const cookies = new Cookies();
+  const raw = document.cookie
+    .split('; ')
+    .find((row) => row.startsWith('visitore_id='));
+  const value = raw ? decodeURIComponent(raw.split('=')[1]) : null;
 
-  // useEffect(() => {
-  //   console.log('roomId : ', roomId);
-  // }, [roomId]);
-  //
-  // useEffect(() => {
-  //   console.log('enterCode : ', enterCode);
-  // }, [enterCode]);
+  useEffect(() => {
+    console.log('value : ', value);
+  }, [value]);
+
   useEffect(() => {
     const fetchRoomInfo = async () => {
       if (enterCode) {
@@ -155,10 +158,12 @@ const RoomStudent = () => {
           </div>
           <div className="w-full flex flex-col items-center gap-6">
             {dumpData?.map((question) => (
+              // 질문 조회 API 연동 후 isEditable 처리
               <Question
                 key={question.question_id}
                 {...question}
                 isAdmin={false}
+                isEditable={true}
               />
             ))}
           </div>

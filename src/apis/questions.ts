@@ -32,8 +32,9 @@ export const postQuestion = async (
   data: string
 ): Promise<QuestionType | string> => {
   try {
-    const sendData = { text: data };
-    const response = await axiosInstance.post(`questions/${roomId}`, sendData);
+    const response = await axiosInstance.post(`rooms/${roomId}/questions`, {
+      text: data,
+    });
     if (response.status === 201) {
       return response.data;
     }
