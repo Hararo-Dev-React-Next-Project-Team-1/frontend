@@ -32,7 +32,9 @@ export const postQuestion = async (
   data: string
 ): Promise<QuestionType | string> => {
   try {
-    const response = await axiosInstance.post(`questions/${roomId}`, data);
+    const response = await axiosInstance.post(`rooms/${roomId}/questions`, {
+      text: data,
+    });
     if (response.status === 201) {
       return response.data;
     }
@@ -40,6 +42,7 @@ export const postQuestion = async (
   } catch (error: any) {
     const code = error.response?.status;
     const msg = error.response?.data?.error || '오류가 발생했습니다.';
+    console.log('error.response : ', error.response);
 
     if (code === 400) return `요청 오류: ${msg}`; //빈 문자열
     return '알 수 없는 오류 발생';

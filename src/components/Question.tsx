@@ -11,6 +11,7 @@ import {
 
 interface QuestionProps extends QuestionType {
   isAdmin: boolean;
+  isEditable: boolean;
 }
 
 export const Question = ({
@@ -20,6 +21,7 @@ export const Question = ({
   is_selected,
   likes,
   isAdmin,
+  isEditable,
 }: QuestionProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -143,7 +145,7 @@ export const Question = ({
             </div>
           </div>
           {/* 더보기 메뉴 */}
-          {!isAdmin && (
+          {!isAdmin && isEditable && (
             <div
               onClick={(e) => {
                 e.stopPropagation();
