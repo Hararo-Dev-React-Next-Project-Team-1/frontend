@@ -63,7 +63,7 @@ const HomePage = () => {
       try {
         const res = await enterRoom(roomCode.toString());
         setEnterDisabled(true);
-        cookies.set('visitore_id', res.visitor_id);
+        cookies.set('client_visitor_id', res.visitor_id);
         navigate(`/room-student?room-id=${res.room_id}&enter-code=${res.code}`);
       } catch (e) {
         console.error(e);
