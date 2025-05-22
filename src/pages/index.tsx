@@ -24,21 +24,15 @@ const HomePage = () => {
 
   // 🔥 Socket.IO 서버 API 라우트 호출 → 서버 초기화
   useEffect(() => {
+    // socket.io 서버 초기화를 트리거함
     fetch('/api/socket_io')
-      .then(() => console.log('소켓 서버 초기화 완료'))
-      .catch((e) => console.error('초기화 실패:', e));
+      .then(() => {
+        console.log("✅ 소켓 서버 초기화 완료됨 (클라이언트 측)");
+      })
+      .catch((err) => {
+        console.error("❌ 소켓 서버 초기화 실패:", err);
+      });
   }, []);
-
-  // useEffect(() => {
-  //   fetch('/api/ping')
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       console.log('✅ 백엔드 응답:', data);
-  //     })
-  //     .catch((err) => {
-  //       console.error('❌ 백엔드 연결 실패:', err);
-  //     });
-  // }, []);
 
   const makeClick = () => {
     setSelected(true);
