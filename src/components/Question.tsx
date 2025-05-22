@@ -23,7 +23,7 @@ export const Question = ({
   text,
   creator_id,
   created_at,
-  likes
+  likes,
   checkClick,
   is_answered,
   isLecturer,
@@ -61,7 +61,6 @@ export const Question = ({
     setEditedText(result.text);
     setIsEditing(false);
     setShowMenu(false);
-
   };
 
   //수정 취소
@@ -210,7 +209,7 @@ export const Question = ({
               )}
             </div>
           )}
-          {isAdmin && (
+          {isLecturer && (
             <div
               className="w-6 h-5 mr-2 cursor-pointer relative"
               onClick={() => checkClick(question_id)}

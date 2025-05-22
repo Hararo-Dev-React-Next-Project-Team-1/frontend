@@ -53,7 +53,6 @@ const RoomAdmin = () => {
       likes: 17,
     },
   ];
-  const [userChat, setUserChat] = useState('');
   const [isLive, setLive] = useState(false);
   const [roomInfo, setRoomInfo] = useState<Room>({
     id: '-1',
@@ -62,7 +61,7 @@ const RoomAdmin = () => {
     created_at: '',
     file_name: '',
   });
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState<QuestionType[]>([]);
   const [connected, setConnected] = useState(false);
   const [roomSocketId, setRoomSocketId] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
@@ -93,8 +92,9 @@ const RoomAdmin = () => {
     const fetchQuestions = async () => {
       if (roomId !== '-1' && roomId && !isNaN(parseInt(roomId))) {
         const res = await getQuestionlist(parseInt(roomId));
+        console.log('res : ', res);
         if (res) {
-          setQuestions(res.questions);
+          setQuestions(res);
         }
       }
     };
@@ -161,7 +161,7 @@ const RoomAdmin = () => {
       if (res) {
         const updated = await getQuestionlist(parseInt(roomId));
         if (updated) {
-          setQuestions(updated.questions);
+          setQuestions(updated);
         }
       }
     }
@@ -186,6 +186,12 @@ const RoomAdmin = () => {
   const viewClick = () => {
     console.log('viewClick');
   };
+  useEffect(() => {
+    console.log('questions : ', questions);
+    if (questions) {
+      console.log('questions.length : ', questions.length);
+    }
+  }, [questions]);
 
   return (
     <div className="w-full flex flex-col items-center py-20 gap-12">
@@ -225,12 +231,11 @@ const RoomAdmin = () => {
             <Question
               key={question.question_id}
               {...question}
-              isAdmin={true}
-              isEditable={false}
+              isLecturer={true}
               checkClick={clickCheck}
             />
           ))}
-          {questions.length === 0 && (
+          {(!questions || questions.length === 0) && (
             <span className="w-full p-12 text-center font-semibold text-xl text-[var(--color-gray-2)] ">
               아직 질문이 없습니다.
             </span>
