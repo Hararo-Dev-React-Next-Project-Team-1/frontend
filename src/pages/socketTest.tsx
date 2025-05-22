@@ -117,7 +117,7 @@ export default function RoomTestPage() {
   useEffect(() => {
     socket.on('receiveQuestion', (q: Question) => {
       console.log("📥 질문 수신:", q);
-      setQuestions((prev) => [q, ...prev]);
+      setQuestions((prev) => [...prev, q]);
     });
 
     return () => {
