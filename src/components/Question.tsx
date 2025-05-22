@@ -8,10 +8,12 @@ import {
   editQuestion,
   type QuestionType,
 } from '../apis/questions';
+import { postLike, deleteLike } from '../apis/like';
 
 interface QuestionProps extends QuestionType {
   isAdmin: boolean;
   isEditable: boolean;
+  roomId: number;
 }
 
 export const Question = ({
@@ -22,8 +24,10 @@ export const Question = ({
   likes,
   isAdmin,
   isEditable,
+  roomId
 }: QuestionProps) => {
   const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(likes);
   const [showMenu, setShowMenu] = useState(false);
   const [selectedBox, setSelectedBox] = useState(is_selected);
   const [isEditing, setIsEditing] = useState(false);
@@ -66,6 +70,26 @@ export const Question = ({
       setShowMenu(false);
     } else {
       alert(res);
+    }
+  };
+
+  // 질문 좋아요
+  const handleLikeClick = async () => {
+    if (isAdmin) return;
+
+    const newLikeState = !isLiked;
+    setIsLiked(newLikeState);
+    setLikeCount((prev) => prev + (newLikeState ? 1 : -1)); // optimistic UI
+
+    const result = newLikeState
+      ? await postLike(roomId, question_id)
+      : await deleteLike(roomId, question_id);
+
+    if (result.startsWith('요청') || result.startsWith('오류') || result.startsWith('서버')) {
+      // 실패했으면 되돌리기
+      setIsLiked((prev) => !prev);
+      setLikeCount((prev) => prev + (newLikeState ? -1 : 1));
+      alert(result);
     }
   };
 
@@ -127,9 +151,9 @@ export const Question = ({
         <div className="flex flex-col items-end justify-between">
           {/* 좋아요 */}
           <div
-            onClick={() => {
-              if (isAdmin) return;
-              setIsLiked((prev) => !prev);
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLikeClick();
             }}
             className={`flex items-center gap-2 px-3 py-[0.4rem] rounded-full cursor-pointer border-1
             ${
@@ -139,7 +163,7 @@ export const Question = ({
             }
             `}
           >
-            <div className="text-[12px]">{likes}</div>
+            <div className="text-[12px]">{likeCount}</div>
             <div className="w-4 h-4 flex items-center justify-center">
               <ThumbIcon />
             </div>
