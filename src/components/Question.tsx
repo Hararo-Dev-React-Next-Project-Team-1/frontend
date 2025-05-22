@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { DotsIcon } from '../assets/DotsIcon';
+import CheckSmall from '../assets/CheckSmall.tsx';
 import { ThumbIcon } from '../assets/ThumbIcon';
 import { UserIcon } from '../assets/UserIcon';
 import { EditQuestion } from './EditQuestion';
@@ -12,6 +13,7 @@ import { postLike, deleteLike } from '../apis/like';
 import { useSearchParams } from 'react-router-dom';
 
 interface QuestionProps extends QuestionType {
+  checkClick: (questions_id: number) => void;
   isLecturer: boolean;
   visitorId: string;
 }
@@ -21,7 +23,8 @@ export const Question = ({
   text,
   creator_id,
   created_at,
-  likes,
+  likes
+  checkClick,
   is_answered,
   isLecturer,
   visitorId,
@@ -58,7 +61,7 @@ export const Question = ({
     setEditedText(result.text);
     setIsEditing(false);
     setShowMenu(false);
-    //소켓 이벤트로 실시간 반영 → 이미 리스닝 중이라면 굳이 여기서 안 해도 됩니다.
+
   };
 
   //수정 취소
@@ -205,6 +208,14 @@ export const Question = ({
                   }}
                 />
               )}
+            </div>
+          )}
+          {isAdmin && (
+            <div
+              className="w-6 h-5 mr-2 cursor-pointer relative"
+              onClick={() => checkClick(question_id)}
+            >
+              <CheckSmall />
             </div>
           )}
         </div>

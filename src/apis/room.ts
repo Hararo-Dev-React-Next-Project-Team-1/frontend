@@ -17,13 +17,11 @@ export const createRoom = async (title: string, file: string | File) => {
 
 export const enterRoom = async (enterCode: string) => {
   const response = await axios.get(`/rooms?enter-code=${enterCode}`);
-  console.log(response.data);
   return response.data;
-}
+};
 
 export const getRoomInfo = async (enterCode: string) => {
   const response = await axios.get(`/rooms?enter-code=${enterCode}`);
-  console.log(response.data);
   return response.data;
 };
 

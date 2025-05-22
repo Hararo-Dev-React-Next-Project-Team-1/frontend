@@ -23,7 +23,7 @@ interface QuestionRes {
 
 export const getQuestionlist = async (
   roomId: number
-): Promise<QuestionType[] | null> => {
+): Promise<GetQuestionListResponse | null> => {
   try {
     const response = await axiosInstance.get<QuestionListResponse>(
       `rooms/${roomId}/questions`
@@ -92,5 +92,16 @@ export const deleteQuestion = async (questionId: number, roomId: number) => {
 
     if (code === 403) return `권한 없음: ${msg}`;
     if (code === 404) return `질문을 찾을 수 없음: ${msg}`;
+  }
+};
+
+export const answerQuestion = async (roomId: string, questionId: number) => {
+  try {
+    const response = await axiosInstance.patch(
+      `rooms/${roomId}/questions/${questionId}/status`
+    );
+    return response.data;
+  } catch (error) {
+    console.log('error.response : ', error.response);
   }
 };

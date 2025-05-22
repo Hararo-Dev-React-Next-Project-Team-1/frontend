@@ -4,9 +4,15 @@ import Sorting from '../assets/Sorting.svg?react';
 import RoomFooter from '../components/RoomFooter';
 import Link from '../assets/Link.svg?react';
 import { Question } from '../components/Question';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getRoomInfo, downloadFile } from '../apis/room.ts';
+import {
+  answerQuestion,
+  getQuestionlist,
+  type QuestionType,
+} from '../apis/questions.ts';
 import { exitRoom } from '../apis/room.ts';
+import socket from '../lib/socket.ts'; // socket.ts 유지
 
 export type Room = {
   id: string | null;
@@ -56,17 +62,14 @@ const RoomAdmin = () => {
     created_at: '',
     file_name: '',
   });
+  const [questions, setQuestions] = useState([]);
+  const [connected, setConnected] = useState(false);
+  const [roomSocketId, setRoomSocketId] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
 
   const roomId = searchParams.get('room-id');
   const enterCode = searchParams.get('enter-code');
-
-  const clickDown = async () => {
-    if (roomId) {
-      await downloadFile(roomId, roomInfo.file_name);
-    }
-  };
-
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchRoomInfo = async () => {
       if (enterCode) {
@@ -86,14 +89,82 @@ const RoomAdmin = () => {
 
     fetchRoomInfo();
   }, [enterCode, roomId]);
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      if (roomId !== '-1' && roomId && !isNaN(parseInt(roomId))) {
+        const res = await getQuestionlist(parseInt(roomId));
+        if (res) {
+          setQuestions(res.questions);
+        }
+      }
+    };
 
-  const sendChat = () => {
-    if (userChat.length == 0) {
-      return;
+    fetchQuestions();
+    if (roomId) {
+      joinRoom();
     }
-    // Todo : 채팅 추가 기능
-    console.log(userChat);
-    setUserChat('');
+
+    return () => {
+      leaveRoom();
+    };
+  }, [roomId]);
+
+  useEffect(() => {
+    const handleReceiveQuestion = (newQuestion: QuestionType) => {
+      setQuestions((prev) => [...prev, newQuestion]);
+    };
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+
+    socket.on('receiveQuestion', handleReceiveQuestion);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      socket.off('receiveQuestion', handleReceiveQuestion);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  const joinRoom = () => {
+    if (!roomId) return;
+
+    const socketId = `room_${roomId}`;
+    setRoomSocketId(socketId);
+
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    socket.emit('joinRoom', { roomSocketId: socketId });
+    setConnected(true);
+  };
+
+  const leaveRoom = () => {
+    if (!connected || !roomSocketId) return;
+
+    socket.emit('leaveRoom', { roomSocketId });
+    setConnected(false);
+    setRoomSocketId(null);
+  };
+
+  const clickDown = async () => {
+    if (roomId) {
+      await downloadFile(roomId, roomInfo.file_name);
+    }
+  };
+
+  const clickCheck = async (questionId: number) => {
+    if (roomId && questionId) {
+      const res = await answerQuestion(roomId, questionId);
+      if (res) {
+        const updated = await getQuestionlist(parseInt(roomId));
+        if (updated) {
+          setQuestions(updated.questions);
+        }
+      }
+    }
   };
 
   // Live 버튼 클릭
@@ -104,7 +175,11 @@ const RoomAdmin = () => {
   // 닫기 버튼 클릭
   const closeClick = async () => {
     if (roomId) {
-      await exitRoom(roomId);
+      if (confirm('질문방을 닫으시겠습니까 ?')) {
+        await exitRoom(roomId);
+        leaveRoom();
+        navigate('/');
+      }
     }
   };
   // view as participant 버튼 클릭
@@ -146,14 +221,20 @@ const RoomAdmin = () => {
         </div>
         {/* 질문 목록 */}
         <div className="w-full flex flex-col items-center gap-6">
-          {dumpData?.map((question) => (
+          {questions?.map((question) => (
             <Question
               key={question.question_id}
               {...question}
               isAdmin={true}
               isEditable={false}
+              checkClick={clickCheck}
             />
           ))}
+          {questions.length === 0 && (
+            <span className="w-full p-12 text-center font-semibold text-xl text-[var(--color-gray-2)] ">
+              아직 질문이 없습니다.
+            </span>
+          )}
         </div>
       </div>
       <div className="w-4/5">
