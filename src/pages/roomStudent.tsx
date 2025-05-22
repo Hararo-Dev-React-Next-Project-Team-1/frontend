@@ -64,7 +64,7 @@ const RoomStudent = () => {
   const cookies = new Cookies();
   const raw = document.cookie
     .split('; ')
-    .find((row) => row.startsWith('visitore_id='));
+    .find((row) => row.startsWith('client_visitor_id='));
   const value = raw ? decodeURIComponent(raw.split('=')[1]) : null;
 
   useEffect(() => {

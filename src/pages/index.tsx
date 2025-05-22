@@ -22,6 +22,18 @@ const HomePage = () => {
   const navigate = useNavigate();
   const cookies = new Cookies();
 
+  // 🔥 Socket.IO 서버 API 라우트 호출 → 서버 초기화
+  useEffect(() => {
+    // socket.io 서버 초기화를 트리거함
+    fetch('/api/socket_io')
+      .then(() => {
+        console.log("✅ 소켓 서버 초기화 완료됨 (클라이언트 측)");
+      })
+      .catch((err) => {
+        console.error("❌ 소켓 서버 초기화 실패:", err);
+      });
+  }, []);
+
   const makeClick = () => {
     setSelected(true);
   };
@@ -44,7 +56,7 @@ const HomePage = () => {
       try {
         const res = await createRoom(roomTitle, fileName);
         setCreateDisabled(true);
-        // navigate(`/room-admin?room-id=${res.room_id}&enter-code=${res.code}`);
+        navigate(`/room-admin?room-id=${res.room_id}&enter-code=${res.code}`);
       } catch (e) {
         console.error(e);
         setCreateDisabled(false);
@@ -63,7 +75,7 @@ const HomePage = () => {
       try {
         const res = await enterRoom(roomCode.toString());
         setEnterDisabled(true);
-        cookies.set('visitore_id', res.visitor_id);
+        cookies.set('client_visitor_id', res.visitor_id);
         navigate(`/room-student?room-id=${res.room_id}&enter-code=${res.code}`);
       } catch (e) {
         console.error(e);
