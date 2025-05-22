@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import RoomHeader from '../components/RoomHeader';
 import Sorting from '../assets/Sorting.svg?react';
 import RoomFooter from '../components/RoomFooter';
@@ -8,7 +8,7 @@ import { useSearchParams } from 'react-router-dom';
 import { getRoomInfo, downloadFile } from '../apis/room.ts';
 import { exitRoom } from '../apis/room.ts';
 
-type Room = {
+export type Room = {
   id: string | null;
   code: string;
   title: string;
@@ -147,7 +147,12 @@ const RoomAdmin = () => {
         {/* 질문 목록 */}
         <div className="w-full flex flex-col items-center gap-6">
           {dumpData?.map((question) => (
-            <Question key={question.question_id} {...question} isAdmin={true} />
+            <Question
+              key={question.question_id}
+              {...question}
+              isAdmin={true}
+              isEditable={false}
+            />
           ))}
         </div>
       </div>

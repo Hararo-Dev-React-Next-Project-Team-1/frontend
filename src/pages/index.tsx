@@ -44,7 +44,7 @@ const HomePage = () => {
       try {
         const res = await createRoom(roomTitle, fileName);
         setCreateDisabled(true);
-        // navigate(`/room-admin?room-id=${res.room_id}&enter-code=${res.code}`);
+        navigate(`/room-admin?room-id=${res.room_id}&enter-code=${res.code}`);
       } catch (e) {
         console.error(e);
         setCreateDisabled(false);
