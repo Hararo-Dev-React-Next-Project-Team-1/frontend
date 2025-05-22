@@ -9,38 +9,49 @@ import {
   editQuestion,
   type QuestionType,
 } from '../apis/questions';
+import { postLike, deleteLike } from '../apis/like';
+import { useSearchParams } from 'react-router-dom';
 
 interface QuestionProps extends QuestionType {
-  isAdmin: boolean;
-  isEditable: boolean;
   checkClick: (questions_id: number) => void;
+  isLecturer: boolean;
+  visitorId: string;
 }
 
 export const Question = ({
   question_id, //좋아요 post시 사용
   text,
+  creator_id,
   created_at,
-  is_selected,
-  likes,
-  isAdmin,
-  isEditable,
+  likes
   checkClick,
+  is_answered,
+  isLecturer,
+  visitorId,
 }: QuestionProps) => {
   const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(likes);
   const [showMenu, setShowMenu] = useState(false);
-  const [selectedBox, setSelectedBox] = useState(is_selected);
+  const [selectedBox, setSelectedBox] = useState(is_answered);
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(text);
 
+  const [searchParams] = useSearchParams();
+  const roomId = searchParams.get('room-id') || '';
+
   //선택한 질문 하이라이팅
   const handleBoxClick = () => {
-    if (!isAdmin) return;
+    if (!isLecturer) return;
     setSelectedBox((prev) => !prev);
   };
 
   //수정 확인
   const handleSave = async () => {
-    const result = await editQuestion(question_id, editedText);
+    const result = await editQuestion(
+      parseInt(question_id, 10),
+      parseInt(roomId, 10),
+      editedText
+    );
     // 실패
     if (typeof result === 'string') {
       alert(result);
@@ -50,7 +61,7 @@ export const Question = ({
     setEditedText(result.text);
     setIsEditing(false);
     setShowMenu(false);
-    //소켓 이벤트로 실시간 반영 → 이미 리스닝 중이라면 굳이 여기서 안 해도 됩니다.
+
   };
 
   //수정 취소
@@ -63,7 +74,10 @@ export const Question = ({
   const handleDelete = async () => {
     if (!confirm('삭제하시겠습니까?')) return;
 
-    const res = await deleteQuestion(question_id);
+    const res = await deleteQuestion(
+      parseInt(question_id, 10),
+      parseInt(roomId, 10)
+    );
     if (res === '삭제 성공') {
       //(소켓 이벤트로 UI 업데이트 or 로컬 상태 갱신)
       setShowMenu(false);
@@ -72,12 +86,36 @@ export const Question = ({
     }
   };
 
+  // 질문 좋아요
+  const handleLikeClick = async () => {
+    if (isLecturer) return;
+
+    const newLikeState = !isLiked;
+    setIsLiked(newLikeState);
+    setLikeCount((prev) => prev + (newLikeState ? 1 : -1)); // optimistic UI
+
+    const result = newLikeState
+      ? await postLike(parseInt(roomId, 10), parseInt(question_id, 10))
+      : await deleteLike(parseInt(roomId, 10), parseInt(question_id, 10));
+
+    if (
+      result.startsWith('요청') ||
+      result.startsWith('오류') ||
+      result.startsWith('서버')
+    ) {
+      // 실패했으면 되돌리기
+      setIsLiked((prev) => !prev);
+      setLikeCount((prev) => prev + (newLikeState ? -1 : 1));
+      alert(result);
+    }
+  };
+
   return (
     <div
       onClick={handleBoxClick}
       className={`flex flex-row w-full h-fit py-4 px-8 rounded-2xl shadow-[0_0_4px_1px_rgba(51,196,168,0.75)] 
         ${selectedBox ? 'bg-[#E1F4F0]' : 'bg-white'}
-        ${isAdmin ? 'cursor-pointer' : ''}
+        ${isLecturer ? 'cursor-pointer' : ''}
       `}
     >
       <div className="w-full h-full flex justify-between">
@@ -93,7 +131,7 @@ export const Question = ({
               </p>
             </div>
           </div>
-          {isEditing ? (
+          {visitorId === creator_id && isEditing ? (
             <div className="flex items-center gap-2 w-full ">
               <input
                 value={editedText}
@@ -130,9 +168,9 @@ export const Question = ({
         <div className="flex flex-col items-end justify-between">
           {/* 좋아요 */}
           <div
-            onClick={() => {
-              if (isAdmin) return;
-              setIsLiked((prev) => !prev);
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLikeClick();
             }}
             className={`flex items-center gap-2 px-3 py-[0.4rem] rounded-full cursor-pointer border-1
             ${
@@ -142,13 +180,14 @@ export const Question = ({
             }
             `}
           >
-            <div className="text-[12px]">{likes}</div>
+            <div className="text-[12px]">{likeCount}</div>
             <div className="w-4 h-4 flex items-center justify-center">
               <ThumbIcon />
             </div>
           </div>
           {/* 더보기 메뉴 */}
-          {!isAdmin && isEditable && (
+          {/* 강연자 아니고, 작성자일때 편집 가능 */}
+          {!isLecturer && visitorId === creator_id && (
             <div
               onClick={(e) => {
                 e.stopPropagation();

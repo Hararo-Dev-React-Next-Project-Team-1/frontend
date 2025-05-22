@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import RoomHeader from '../components/RoomHeader.tsx';
 import Sorting from '../assets/Sorting.svg?react';
 import ChatInput from '../components/ChatInput.tsx';
 import Link from '../assets/Link.svg?react';
 import { Question } from '../components/Question.tsx';
-import { postQuestion } from '../apis/questions.ts';
+import {
+  getQuestionlist,
+  postQuestion,
+  type QuestionType,
+} from '../apis/questions.ts';
 import { useSearchParams } from 'react-router-dom';
 import { downloadFile, getRoomInfo } from '../apis/room.ts';
 import { Cookies } from 'react-cookie';
@@ -18,39 +22,10 @@ type Room = {
 };
 
 const RoomStudent = () => {
-  const dumpData = [
-    {
-      question_id: 1,
-      text: '프론트엔드와 백엔드의 가장 큰 차이점은 무엇인가요?',
-      created_at: '2025-05-16T09:00:00Z',
-      is_selected: false,
-      likes: 12,
-    },
-    {
-      question_id: 2,
-      text: 'React에서 상태 관리를 어떤 방식으로 하나요?',
-      created_at: '2025-05-16T09:15:00Z',
-      is_selected: true,
-      likes: 25,
-    },
-    {
-      question_id: 3,
-      text: 'CORS 에러는 왜 발생하고 어떻게 해결하나요?',
-      created_at: '2025-05-16T09:30:00Z',
-      is_selected: false,
-      likes: 8,
-    },
-    {
-      question_id: 4,
-      text: 'TypeScript의 유틸리티 타입 중 가장 자주 쓰는 것은?',
-      created_at: '2025-05-16T09:45:00Z',
-      is_selected: false,
-      likes: 17,
-    },
-  ];
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get('room-id');
   const enterCode = searchParams.get('enter-code');
+  const [qesList, setQesList] = useState<QuestionType[]>([]);
 
   const [userChat, setUserChat] = useState('');
   const [isLive, setLive] = useState(false);
@@ -61,6 +36,7 @@ const RoomStudent = () => {
     created_at: '',
     file_name: '',
   });
+  const [visitorId, setVisitorId] = useState('');
   const cookies = new Cookies();
   const raw = document.cookie
     .split('; ')
@@ -84,12 +60,27 @@ const RoomStudent = () => {
             created_at: res.created_at,
             file_name: res.file_name,
           }));
+          setVisitorId(res.visitor_id);
         }
       }
     };
 
     fetchRoomInfo();
   }, [enterCode, roomId]);
+
+  const getQuestion = useCallback(async () => {
+    if (!roomId) {
+      console.log('roomId is null');
+      return;
+    }
+
+    const res = await getQuestionlist(parseInt(roomId, 10));
+    setQesList(res ?? []);
+  }, [roomId]);
+
+  useEffect(() => {
+    getQuestion();
+  }, [getQuestion]);
 
   const sendChat = async () => {
     if (userChat.trim().length == 0) return;
@@ -154,16 +145,16 @@ const RoomStudent = () => {
                 <span>자료 다운로드</span>
               </div>
             </div>
-            <span className="font-semibold">{dumpData.length} Questions</span>
+            <span className="font-semibold">{qesList.length} Questions</span>
           </div>
           <div className="w-full flex flex-col items-center gap-6">
-            {dumpData?.map((question) => (
+            {qesList?.map((question) => (
               // 질문 조회 API 연동 후 isEditable 처리
               <Question
                 key={question.question_id}
                 {...question}
-                isAdmin={false}
-                isEditable={true}
+                isLecturer={false}
+                visitorId={visitorId}
               />
             ))}
           </div>

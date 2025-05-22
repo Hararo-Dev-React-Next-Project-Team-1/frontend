@@ -1,17 +1,20 @@
 import axiosInstance from './axiosInstance';
 
 export interface QuestionType {
-  question_id: number;
-  text: string;
+  room_id: string;
+  question_id: string;
+  creator_id: string;
   created_at: string;
-  is_selected?: boolean;
-  likes: number;
+  text: string;
+  likes: string;
+  is_answered?: boolean;
 }
-type GetQuestionListResponse = {
+
+interface QuestionListResponse {
   message: string;
   count: string;
   questions: QuestionType[];
-};
+}
 
 interface QuestionRes {
   question_id: number;
@@ -22,10 +25,10 @@ export const getQuestionlist = async (
   roomId: number
 ): Promise<GetQuestionListResponse | null> => {
   try {
-    const response = await axiosInstance.get<GetQuestionListResponse>(
+    const response = await axiosInstance.get<QuestionListResponse>(
       `rooms/${roomId}/questions`
     );
-    return response.data;
+    return response.data.questions;
   } catch (error) {
     console.log(error);
     return null;
@@ -56,10 +59,14 @@ export const postQuestion = async (
 
 export const editQuestion = async (
   questionId: number,
+  roomId: number,
   data: string
 ): Promise<QuestionRes | string> => {
   try {
-    const res = await axiosInstance.patch(`questions/${questionId}`, data);
+    const res = await axiosInstance.patch(
+      `rooms/${roomId}/questions/${questionId}`,
+      { text: data }
+    );
     return res.data;
   } catch (error: any) {
     const code = error.response?.status;
@@ -71,10 +78,12 @@ export const editQuestion = async (
   }
 };
 
-export const deleteQuestion = async (questionId: number) => {
+export const deleteQuestion = async (questionId: number, roomId: number) => {
   try {
-    const response = await axiosInstance.delete(`questions/${questionId}`);
-    if (response.status === 204) {
+    const response = await axiosInstance.delete(
+      `rooms/${roomId}/questions/${questionId}`
+    );
+    if (response.status === 200) {
       return '삭제 성공';
     }
   } catch (error: any) {
