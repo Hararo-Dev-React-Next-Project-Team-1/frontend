@@ -12,7 +12,7 @@ type Question = {
   created_at: string;
   text: string;
   likes: string;
-  is_selected: boolean;
+  is_answered: boolean;
 };
 
 export default function RoomTestPage() {
@@ -39,23 +39,6 @@ export default function RoomTestPage() {
     setRoomClosed(false);
   };
 
-  // 질문 전송
-  const handleSendQuestion = () => {
-    if (!roomSocketId || !connected || roomClosed) return;
-
-    const text = '테스트 질문입니다.';
-    const visitorId = 'test-visitor-1234'; // ✅ 임시 visitorId
-
-    //console.log('질문 전송 버튼 클릭됨');
-    // console.log('질문 내용:', text);
-
-    socket.emit('sendQuestion', {
-      roomId: roomSocketId,
-      text: text,
-      visitorId: visitorId
-    });
-  };
-
   // 질문 수정
   socket.on('updateQuestion', (updatedQuestion: Question) => {
     setQuestions((prev) =>
@@ -65,6 +48,28 @@ export default function RoomTestPage() {
     );
   });
 
+  // 좋아요 누르면 내가 먼저 상태 업데이트 + 소켓 전송
+  const handleLike = async (questionId: string) => {
+    const res = await fetch(`/api/rooms/${roomId}/questions/${questionId}/likes`, {
+      method: 'POST',
+    });
+
+    if (!res.ok) return;
+
+    const data = await res.json();
+
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.question_id === questionId ? { ...q, likes: data.likes } : q
+      )
+    );
+
+    socket.emit('updateLikes', {
+      roomId: roomSocketId,
+      questionId,
+      likes: data.likes,
+    });
+  };
 
   // 방 닫기 (강연자 전용 기능)
   const handleCloseRoom = () => {
@@ -82,7 +87,7 @@ export default function RoomTestPage() {
     alert("방을 나갔습니다.");
   };
 
-  // 질문 초기 로딩용 useEffect (roomId 바뀔 때마다 GET)
+  // 질문 초기 로딩 (roomId 바뀔 때마다 GET)
   const fetchQuestions = useCallback(async () => {
     if (!roomId) return;
 
@@ -107,55 +112,11 @@ export default function RoomTestPage() {
     fetchQuestions();
   }, [fetchQuestions]);
 
-  // 질문 삭제 반영
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleDeleteQuestion = ({ question_id }: { question_id: string }) => {
-      console.log("🧨 삭제 이벤트 수신:", question_id);
-      setQuestions((prev) => {
-        // console.log("🔥 기존 질문 목록:", prev.map(q => q.question_id));
-        // console.log("🧨 삭제하려는 ID:", question_id, typeof question_id);
-
-        const updated = prev.filter((q) => String(q.question_id) !== String(question_id));
-
-        // console.log("🧹 업데이트된 질문 목록:", updated.map(q => q.question_id));
-
-        return updated;
-      });
-
-    };
-
-    socket.on('deleteQuestion', handleDeleteQuestion);
-
-    return () => {
-      socket.off('deleteQuestion', handleDeleteQuestion);
-    };
-  }, [socket]);
-
-  // 질문 수정 반영
-  useEffect(() => {
-    if (!socket) return;
-  
-    const handleUpdate = ({ question }: { question: Question }) => {
-      setQuestions((prev) =>
-        prev.map((q) =>
-          String(q.question_id) === String(question.question_id) ? question : q
-        )
-      );
-    };
-  
-    socket.on("updateQuestion", handleUpdate);
-  
-    return () => {
-      socket.off("updateQuestion", handleUpdate);
-    };
-  }, [socket]);
 
   // 질문 수신용 useEffect
   useEffect(() => {
     socket.on('receiveQuestion', (q: Question) => {
-      // console.log("📥 질문 수신:", q);
+      console.log("📥 질문 수신:", q);
       setQuestions((prev) => [q, ...prev]);
     });
 
@@ -176,6 +137,64 @@ export default function RoomTestPage() {
     };
   }, []);
 
+  // 질문 수정 반영
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = ({ question }: { question: Question }) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          String(q.question_id) === String(question.question_id) ? question : q
+        )
+      );
+    };
+
+    socket.on("updateQuestion", handleUpdate);
+
+    return () => {
+      socket.off("updateQuestion", handleUpdate);
+    };
+  }, [socket]);
+
+  // 질문 삭제 반영
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleDeleteQuestion = ({ question_id }: { question_id: string }) => {
+      console.log("🧨 삭제 이벤트 수신:", question_id);
+      setQuestions((prev) => {
+        const updated = prev.filter((q) => String(q.question_id) !== String(question_id));
+        return updated;
+      });
+    };
+    socket.on('deleteQuestion', handleDeleteQuestion);
+
+    return () => {
+      socket.off('deleteQuestion', handleDeleteQuestion);
+    };
+  }, [socket]);
+
+
+  // 좋아요 실시간 반영
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdateLikes = ({ questionId, likes }: { questionId: string; likes: string }) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.question_id === questionId ? { ...q, likes } : q
+        )
+      );
+    };
+
+    socket.on('updateLikes', handleUpdateLikes);
+
+    return () => {
+      socket.off('updateLikes', handleUpdateLikes);
+    };
+  }, [socket]);
+
+
 
   return (
     <div style={{ padding: 20 }}>
@@ -188,7 +207,6 @@ export default function RoomTestPage() {
       {connected && !roomClosed && (
         <>
           <p>✅ 현재 방: <strong>{roomSocketId}</strong></p>
-          <button onClick={handleSendQuestion}> 📤 질문 전송 </button>
           <button onClick={handleLeaveRoom}> 🏃🏻 방 나가기 </button>
           <button onClick={handleCloseRoom}> ❌ 방 닫기 </button>
         </>
@@ -205,7 +223,10 @@ export default function RoomTestPage() {
           return (
             <li key={q.question_id}>
               <div><strong>질문:</strong> {text}</div>
-              <div><strong>좋아요:</strong> {likes}</div>
+              <div>
+                <strong>좋아요:</strong> {likes}
+                <button onClick={() => handleLike(q.question_id)}>좋아요 👍</button>
+              </div>
               <div><strong>작성 시간:</strong> {new Date(created_at).toLocaleString('ko-KR')}</div>
               <hr />
             </li>
