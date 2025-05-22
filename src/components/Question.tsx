@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { DotsIcon } from '../assets/DotsIcon';
+import CheckSmall from '../assets/CheckSmall.tsx';
 import { ThumbIcon } from '../assets/ThumbIcon';
 import { UserIcon } from '../assets/UserIcon';
 import { EditQuestion } from './EditQuestion';
@@ -12,6 +13,7 @@ import {
 interface QuestionProps extends QuestionType {
   isAdmin: boolean;
   isEditable: boolean;
+  checkClick: (questions_id: number) => void;
 }
 
 export const Question = ({
@@ -22,6 +24,7 @@ export const Question = ({
   likes,
   isAdmin,
   isEditable,
+  checkClick,
 }: QuestionProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -166,6 +169,14 @@ export const Question = ({
                   }}
                 />
               )}
+            </div>
+          )}
+          {isAdmin && (
+            <div
+              className="w-6 h-5 mr-2 cursor-pointer relative"
+              onClick={() => checkClick(question_id)}
+            >
+              <CheckSmall />
             </div>
           )}
         </div>

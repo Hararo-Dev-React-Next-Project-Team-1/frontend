@@ -7,6 +7,11 @@ export interface QuestionType {
   is_selected?: boolean;
   likes: number;
 }
+type GetQuestionListResponse = {
+  message: string;
+  count: string;
+  questions: QuestionType[];
+};
 
 interface QuestionRes {
   question_id: number;
@@ -15,10 +20,10 @@ interface QuestionRes {
 
 export const getQuestionlist = async (
   roomId: number
-): Promise<QuestionType[] | null> => {
+): Promise<GetQuestionListResponse | null> => {
   try {
-    const response = await axiosInstance.get<QuestionType[]>(
-      `questions/${roomId}`
+    const response = await axiosInstance.get<GetQuestionListResponse>(
+      `rooms/${roomId}/questions`
     );
     return response.data;
   } catch (error) {
@@ -78,5 +83,16 @@ export const deleteQuestion = async (questionId: number) => {
 
     if (code === 403) return `권한 없음: ${msg}`;
     if (code === 404) return `질문을 찾을 수 없음: ${msg}`;
+  }
+};
+
+export const answerQuestion = async (roomId: string, questionId: number) => {
+  try {
+    const response = await axiosInstance.patch(
+      `rooms/${roomId}/questions/${questionId}/status`
+    );
+    return response.data;
+  } catch (error) {
+    console.log('error.response : ', error.response);
   }
 };
