@@ -16,12 +16,8 @@ export const AdminQuestion = ({
   isAdmin,
   roomTitle,
 }: QuestionProps) => {
-  const [selectedBox, setSelectedBox] = useState(is_selected);
-
-  //선택한 질문 하이라이팅
   const handleBoxClick = () => {
-    if (!isAdmin) return;
-    setSelectedBox((prev) => !prev);
+    // Todo : 방 이동 처리
   };
 
   const formatDate = (dateStr: string) => {
@@ -36,16 +32,20 @@ export const AdminQuestion = ({
       created_at.slice(11, 16)
     );
   };
+  console.log('isAdmin', isAdmin);
 
   return (
     <div
       onClick={handleBoxClick}
       className={`flex flex-row w-full h-fit py-4 px-8 rounded-2xl shadow-[0_0_4px_1px_rgba(51,196,168,0.75)] 
-        ${selectedBox ? 'bg-[#E1F4F0]' : 'bg-white'}
-        ${isAdmin ? 'cursor-pointer' : ''}
+        ${isAdmin ? 'cursor-pointer border-[var(--color-primary)] bg-[#E1F4F0]' : 'bg-white'}
       `}
     >
-      <div className="w-full h-full flex justify-between">
+      <div
+        className={`w-full h-full flex justify-between 
+        ${isAdmin ? 'py-4' : ''}
+        `}
+      >
         <div className="flex flex-col gap-3 flex-1">
           <div className="flex flex-row gap-4 items-center">
             <div className="w-8 h-fit justify-center items-center ">

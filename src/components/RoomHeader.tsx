@@ -6,14 +6,13 @@ type Props = {
 
 const RoomHeader = ({ title, roomCode, dateStr }: Props) => {
   const date = new Date(dateStr);
-  const formatted =
-    date instanceof Date && !isNaN(date.getTime())
-      ? date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        })
-      : '';
+  const formatted = !isNaN(date.getTime())
+    ? date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : '';
 
   return (
     <div className="w-full py-4 px-1 flex justify-between items-end relative border-b-2 border-[#CFCFCF]">
