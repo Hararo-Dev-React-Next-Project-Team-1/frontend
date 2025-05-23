@@ -6,7 +6,6 @@ import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 import { createRoom, enterRoom } from '../apis/room.ts';
 import { useNavigate } from 'react-router-dom';
-import { Cookies } from 'react-cookie';
 
 const HomePage = () => {
   const [selected, setSelected] = useState<boolean>(true);
@@ -20,17 +19,16 @@ const HomePage = () => {
   const [createDisabled, setCreateDisabled] = useState<boolean>(false);
   const [enterDisabled, setEnterDisabled] = useState<boolean>(false);
   const navigate = useNavigate();
-  const cookies = new Cookies();
 
   // 🔥 Socket.IO 서버 API 라우트 호출 → 서버 초기화
   useEffect(() => {
     // socket.io 서버 초기화를 트리거함
     fetch('/api/socket_io')
       .then(() => {
-        console.log("✅ 소켓 서버 초기화 완료됨 (클라이언트 측)");
+        console.log('✅ 소켓 서버 초기화 완료됨 (클라이언트 측)');
       })
       .catch((err) => {
-        console.error("❌ 소켓 서버 초기화 실패:", err);
+        console.error('❌ 소켓 서버 초기화 실패:', err);
       });
   }, []);
 
@@ -75,7 +73,6 @@ const HomePage = () => {
       try {
         const res = await enterRoom(roomCode.toString());
         setEnterDisabled(true);
-        cookies.set('client_visitor_id', res.visitor_id);
         navigate(`/room-student?room-id=${res.room_id}&enter-code=${res.code}`);
       } catch (e) {
         console.error(e);

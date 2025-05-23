@@ -37,15 +37,6 @@ const RoomStudent = () => {
     file_name: '',
   });
   const [visitorId, setVisitorId] = useState('');
-  const cookies = new Cookies();
-  const raw = document.cookie
-    .split('; ')
-    .find((row) => row.startsWith('client_visitor_id='));
-  const value = raw ? decodeURIComponent(raw.split('=')[1]) : null;
-
-  useEffect(() => {
-    console.log('value : ', value);
-  }, [value]);
 
   useEffect(() => {
     const fetchRoomInfo = async () => {
