@@ -140,7 +140,7 @@ const RoomAdmin = () => {
       socket.off('receiveQuestion', handleReceiveQuestion);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isRecent]);
+  }, []);
 
   const sortedByCreatedAt = (questions: QuestionType[]) => {
     return [...questions].sort(
