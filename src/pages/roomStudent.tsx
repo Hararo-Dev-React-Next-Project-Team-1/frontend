@@ -37,15 +37,6 @@ const RoomStudent = () => {
     file_name: '',
   });
   const [visitorId, setVisitorId] = useState('');
-  const cookies = new Cookies();
-  const raw = document.cookie
-    .split('; ')
-    .find((row) => row.startsWith('client_visitor_id='));
-  const value = raw ? decodeURIComponent(raw.split('=')[1]) : null;
-
-  useEffect(() => {
-    console.log('value : ', value);
-  }, [value]);
 
   useEffect(() => {
     const fetchRoomInfo = async () => {
@@ -157,6 +148,11 @@ const RoomStudent = () => {
                 visitorId={visitorId}
               />
             ))}
+            {(!qesList || qesList.length === 0) && (
+              <span className="w-full p-12 text-center font-semibold text-xl text-[var(--color-gray-2)] ">
+                아직 질문이 없습니다.
+              </span>
+            )}
           </div>
         </div>
       </div>
