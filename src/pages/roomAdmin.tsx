@@ -1,17 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import RoomHeader from '../components/RoomHeader';
 import Sorting from '../assets/Sorting.svg?react';
 import RoomFooter from '../components/RoomFooter';
 import Link from '../assets/Link.svg?react';
 import { Question } from '../components/Question';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getRoomInfo, downloadFile } from '../apis/room.ts';
+import { downloadFile, exitRoom, getRoomInfo } from '../apis/room.ts';
 import {
   answerQuestion,
   getQuestionlist,
   type QuestionType,
 } from '../apis/questions.ts';
-import { exitRoom } from '../apis/room.ts';
 import socket from '../lib/socket.ts'; // socket.ts 유지
 
 export type Room = {
@@ -64,6 +63,12 @@ const RoomAdmin = () => {
   const [questions, setQuestions] = useState<QuestionType[]>([]);
   const [connected, setConnected] = useState(false);
   const [roomSocketId, setRoomSocketId] = useState<string | null>(null);
+  const [isRecent, setIsRecent] = useState(true);
+  const isRecentRef = useRef(isRecent);
+  useEffect(() => {
+    isRecentRef.current = isRecent;
+  }, [isRecent]);
+
   const [searchParams] = useSearchParams();
 
   const roomId = searchParams.get('room-id');
@@ -92,9 +97,12 @@ const RoomAdmin = () => {
     const fetchQuestions = async () => {
       if (roomId !== '-1' && roomId && !isNaN(parseInt(roomId))) {
         const res = await getQuestionlist(parseInt(roomId));
-        console.log('res : ', res);
         if (res) {
-          setQuestions(res);
+          if (isRecent) {
+            setQuestions(sortedByCreatedAt(res));
+          } else {
+            setQuestions(sortedByLikes(res));
+          }
         }
       }
     };
@@ -111,7 +119,14 @@ const RoomAdmin = () => {
 
   useEffect(() => {
     const handleReceiveQuestion = (newQuestion: QuestionType) => {
-      setQuestions((prev) => [...prev, newQuestion]);
+      setQuestions((prev) => {
+        const updated = [...prev, newQuestion];
+        if (isRecentRef.current) {
+          return sortedByCreatedAt(updated);
+        } else {
+          return sortedByLikes(updated);
+        }
+      });
     };
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
@@ -126,6 +141,25 @@ const RoomAdmin = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
+
+  const sortedByCreatedAt = (questions: QuestionType[]) => {
+    return [...questions].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  };
+  const sortedByLikes = (questions: QuestionType[]) => {
+    return [...questions].sort(
+      (a, b) => parseInt(String(b.likes)) - parseInt(String(a.likes))
+    );
+  };
+  useEffect(() => {
+    if (isRecent) {
+      setQuestions(sortedByCreatedAt(questions));
+    } else {
+      setQuestions(sortedByLikes(questions));
+    }
+  }, [isRecent]);
 
   const joinRoom = () => {
     if (!roomId) return;
@@ -161,7 +195,11 @@ const RoomAdmin = () => {
       if (res) {
         const updated = await getQuestionlist(parseInt(roomId));
         if (updated) {
-          setQuestions(updated);
+          if (isRecent) {
+            setQuestions(sortedByCreatedAt(updated));
+          } else {
+            setQuestions(sortedByLikes(updated));
+          }
         }
       }
     }
@@ -186,12 +224,6 @@ const RoomAdmin = () => {
   const viewClick = () => {
     console.log('viewClick');
   };
-  useEffect(() => {
-    console.log('questions : ', questions);
-    if (questions) {
-      console.log('questions.length : ', questions.length);
-    }
-  }, [questions]);
 
   return (
     <div className="w-full flex flex-col items-center py-20 gap-12">
@@ -210,9 +242,10 @@ const RoomAdmin = () => {
             <div
               className="rounded-xl flex items-center relative
               px-14 py-3 font-medium border border-[#CFCFCF] cursor-pointer"
+              onClick={() => setIsRecent(!isRecent)}
             >
               <Sorting className="absolute left-7" />
-              <span>Recent</span>
+              <span className="min-w-14">{isRecent ? 'Recent' : 'Likes'}</span>
             </div>
             <div
               className="rounded-xl flex items-center relative text-[#289983]
