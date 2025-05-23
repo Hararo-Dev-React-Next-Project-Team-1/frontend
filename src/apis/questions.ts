@@ -6,7 +6,7 @@ export interface QuestionType {
   creator_id: string;
   created_at: string;
   text: string;
-  likes: string;
+  likes: number;
   is_answered?: boolean;
 }
 
@@ -23,7 +23,7 @@ interface QuestionRes {
 
 export const getQuestionlist = async (
   roomId: number
-): Promise<GetQuestionListResponse | null> => {
+): Promise<QuestionType[] | null> => {
   try {
     const response = await axiosInstance.get<QuestionListResponse>(
       `rooms/${roomId}/questions`

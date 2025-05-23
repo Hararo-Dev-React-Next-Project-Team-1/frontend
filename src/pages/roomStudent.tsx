@@ -157,6 +157,11 @@ const RoomStudent = () => {
                 visitorId={visitorId}
               />
             ))}
+            {(!qesList || qesList.length === 0) && (
+              <span className="w-full p-12 text-center font-semibold text-xl text-[var(--color-gray-2)] ">
+                아직 질문이 없습니다.
+              </span>
+            )}
           </div>
         </div>
       </div>
