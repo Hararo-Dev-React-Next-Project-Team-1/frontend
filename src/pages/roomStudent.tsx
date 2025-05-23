@@ -11,7 +11,7 @@ import {
 } from '../apis/questions.ts';
 import { useSearchParams } from 'react-router-dom';
 import { downloadFile, getRoomInfo } from '../apis/room.ts';
-import { Cookies } from 'react-cookie';
+import socket from '../lib/socket.ts';
 
 type Room = {
   id: string | null;
@@ -37,60 +37,96 @@ const RoomStudent = () => {
     file_name: '',
   });
   const [visitorId, setVisitorId] = useState('');
-  const cookies = new Cookies();
-  const raw = document.cookie
-    .split('; ')
-    .find((row) => row.startsWith('client_visitor_id='));
-  const value = raw ? decodeURIComponent(raw.split('=')[1]) : null;
 
-  useEffect(() => {
-    console.log('value : ', value);
-  }, [value]);
+  // Socket 상태 관리
+  const [connected, setConnected] = useState(false);
+  const [roomSocketId, setRoomSocketId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchRoomInfo = async () => {
-      if (enterCode) {
+      if (!enterCode) return;
+      try {
         const res = await getRoomInfo(enterCode);
-        if (res) {
-          setRoomInfo((prev) => ({
-            ...prev,
+        if (res && roomId) {
+          setRoomInfo({
             id: roomId,
             code: enterCode,
             title: res.title,
             created_at: res.created_at,
             file_name: res.file_name,
-          }));
+          });
           setVisitorId(res.visitor_id);
         }
+      } catch (err) {
+        console.error('방 정보 불러오기 실패:', err);
       }
     };
-
     fetchRoomInfo();
   }, [enterCode, roomId]);
 
-  const getQuestion = useCallback(async () => {
-    if (!roomId) {
-      console.log('roomId is null');
-      return;
-    }
-
+  // 초기 질문
+  const fetchQuestions = useCallback(async () => {
+    if (!roomId) return;
     const res = await getQuestionlist(parseInt(roomId, 10));
     setQesList(res ?? []);
   }, [roomId]);
 
   useEffect(() => {
-    getQuestion();
-  }, [getQuestion]);
+    if (!roomId) return;
+    fetchQuestions();
+
+    const socketId = `room_${roomId}`;
+    setRoomSocketId(socketId);
+
+    if (!socket.connected) socket.connect();
+    socket.emit('joinRoom', { roomSocketId: socketId });
+
+    return () => {
+      socket.emit('leaveRoom', { roomSocketId: socketId });
+    };
+  }, [fetchQuestions, roomId]);
+
+  useEffect(() => {
+    const handleReceiveQuestion = (newQuestion: QuestionType) => {
+      setQesList((prev) => [...prev, newQuestion]);
+    };
+
+    const onUpdated = (payload: { question: QuestionType }) => {
+      const { question } = payload;
+      setQesList((prev) =>
+        prev.map((q) =>
+          q.question_id === String(question.question_id)
+            ? { ...q, text: question.text }
+            : q
+        )
+      );
+    };
+
+    const onDeleted = ({ question_id }: { question_id: number }) => {
+      setQesList((prev) =>
+        prev.filter((q) => q.question_id !== String(question_id))
+      );
+    };
+
+    socket.on('receiveQuestion', handleReceiveQuestion);
+    socket.on('updateQuestion', onUpdated);
+    socket.on('deleteQuestion', onDeleted);
+
+    return () => {
+      socket.off('receiveQuestion', handleReceiveQuestion);
+      socket.off('updateQuestion', onUpdated);
+      socket.off('deleteQuestion', onDeleted);
+    };
+  }, [socket]);
 
   const sendChat = async () => {
-    if (userChat.trim().length == 0) return;
-
+    if (userChat.trim().length === 0) return;
     try {
-      const res = await postQuestion(Number(roomId), userChat);
-      console.log(res);
+      await postQuestion(Number(roomId), userChat);
 
-      // socket.emit('question:posted')
-
+      if (roomSocketId) {
+        socket.emit('receiveQuestion', { roomSocketId });
+      }
       setUserChat('');
     } catch (error) {
       console.error('질문 전송 실패:', error);
@@ -121,8 +157,8 @@ const RoomStudent = () => {
     <div className="w-full flex flex-col items-center py-20 gap-12">
       <div className="w-4/5 flex flex-col items-center gap-20">
         <RoomHeader
-          title={'Hooks 파헤치기'}
-          dateStr={'2025-05-16 14:27:09'}
+          title={roomInfo.title}
+          dateStr={roomInfo.created_at}
           roomCode={enterCode}
         />
         <ChatInput onChange={setUserChat} sendChat={sendChat} />
@@ -155,6 +191,19 @@ const RoomStudent = () => {
                 {...question}
                 isLecturer={false}
                 visitorId={visitorId}
+                roomSocketId={roomSocketId}
+                onUpdate={(id, newText) =>
+                  setQesList((prev) =>
+                    prev.map((q) =>
+                      q.question_id === String(id) ? { ...q, text: newText } : q
+                    )
+                  )
+                }
+                onDelete={(id) =>
+                  setQesList((prev) =>
+                    prev.filter((q) => q.question_id !== String(id))
+                  )
+                }
               />
             ))}
           </div>

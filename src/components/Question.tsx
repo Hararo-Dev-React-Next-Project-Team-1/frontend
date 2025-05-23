@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DotsIcon } from '../assets/DotsIcon';
 import CheckSmall from '../assets/CheckSmall.tsx';
 import { ThumbIcon } from '../assets/ThumbIcon';
@@ -13,9 +13,12 @@ import { postLike, deleteLike } from '../apis/like';
 import { useSearchParams } from 'react-router-dom';
 
 interface QuestionProps extends QuestionType {
-  checkClick: (questions_id: number) => void;
+  checkClick?: (questions_id: number) => void;
   isLecturer: boolean;
-  visitorId: string;
+  visitorId?: string;
+  roomSocketId?: string | null;
+  onUpdate?: (questionId: number, text: string) => void;
+  onDelete?: (questionId: number) => void;
 }
 
 export const Question = ({
@@ -28,6 +31,9 @@ export const Question = ({
   is_answered,
   isLecturer,
   visitorId,
+  roomSocketId,
+  onUpdate,
+  onDelete,
 }: QuestionProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
@@ -52,11 +58,12 @@ export const Question = ({
       parseInt(roomId, 10),
       editedText
     );
-    // 실패
+
     if (typeof result === 'string') {
-      alert(result);
-      return;
+      return alert(result);
     }
+
+    onUpdate?.(parseInt(question_id, 10), result.text);
 
     setEditedText(result.text);
     setIsEditing(false);
@@ -78,7 +85,8 @@ export const Question = ({
       parseInt(roomId, 10)
     );
     if (res === '삭제 성공') {
-      //(소켓 이벤트로 UI 업데이트 or 로컬 상태 갱신)
+      onDelete?.(parseInt(question_id, 10));
+
       setShowMenu(false);
     } else {
       alert(res);
@@ -160,7 +168,7 @@ export const Question = ({
               </div>
             </div>
           ) : (
-            <div>{text}</div>
+            <div>{editedText}</div>
           )}
         </div>
         {/* 좋아요, 더보기 버튼 */}
@@ -209,14 +217,14 @@ export const Question = ({
               )}
             </div>
           )}
-          {isLecturer && (
+          {/* {isLecturer && (
             <div
               className="w-6 h-5 mr-2 cursor-pointer relative"
               onClick={() => checkClick(question_id)}
             >
               <CheckSmall />
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>
