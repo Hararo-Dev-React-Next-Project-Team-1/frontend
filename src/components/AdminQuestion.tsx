@@ -1,23 +1,30 @@
 import { useState } from 'react';
 import { UserIcon } from '../assets/UserIcon';
 import { type QuestionType } from '../apis/questions';
+import { useNavigate } from 'react-router-dom';
 
 interface QuestionProps extends QuestionType {
   isAdmin: boolean;
   isEditable: boolean;
   complete: boolean;
   roomTitle: string;
+  onClick?: () => void;
 }
 
 export const AdminQuestion = ({
   text,
   created_at,
-  is_selected,
   isAdmin,
   roomTitle,
+  onClick,
 }: QuestionProps) => {
+
+  // const navigate = useNavigate();
   const handleBoxClick = () => {
     // Todo : 방 이동 처리
+    if (onClick) {
+      onClick(); // ✅ 전달된 경우에만 실행
+    }
   };
 
   const formatDate = (dateStr: string) => {
