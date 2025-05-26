@@ -21,6 +21,7 @@ export default function RoomTestPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [roomClosed, setRoomClosed] = useState(false);
   const [roomId, setRoomId] = useState<number | null>(null)
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   // 방 입장
   const handleJoin = (roomId: number) => {
@@ -194,7 +195,16 @@ export default function RoomTestPage() {
     };
   }, [socket]);
 
+  // 하이라이트 실시간 반영
+  useEffect(() => {
+    socket.on('receiveHighlight', (data: { question_id: string }) => {
+      setHighlightedId(data.question_id);
+    });
 
+    return () => {
+      socket.off('receiveHighlight');
+    };
+  }, []);
 
   return (
     <div style={{ padding: 20 }}>
@@ -218,21 +228,30 @@ export default function RoomTestPage() {
       <h4>📋 질문 목록</h4>
       <ul>
         {questions.map((q) => {
-          // responseBody에 포함된 값 전체를 받아오되, 화면에 표시하고 싶은 일부 속성만 골라서 출력
-          const { text, likes, created_at } = q;
+          const { text, likes, created_at, question_id } = q;
+          const isHighlighted = highlightedId === question_id.toString();
+
           return (
-            <li key={q.question_id}>
+            <li
+              key={question_id}
+              style={{
+                backgroundColor: isHighlighted ? '#fff7d6' : 'transparent', // 연노랑 강조
+                border: isHighlighted ? '2px solid orange' : '1px solid #ccc',
+                padding: '8px',
+                marginBottom: '8px',
+              }}
+            >
               <div><strong>질문:</strong> {text}</div>
               <div>
                 <strong>좋아요:</strong> {likes}
-                <button onClick={() => handleLike(q.question_id)}>좋아요 👍</button>
+                <button onClick={() => handleLike(question_id)}>좋아요 👍</button>
               </div>
               <div><strong>작성 시간:</strong> {new Date(created_at).toLocaleString('ko-KR')}</div>
-              <hr />
             </li>
           );
         })}
       </ul>
+
     </div>
   );
 }
