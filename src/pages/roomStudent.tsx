@@ -105,14 +105,24 @@ const RoomStudent = () => {
       );
     };
 
+    const handleLikes = ({ questionId, likes }: { questionId: number, likes:number }) =>{
+      setQesList((prev) =>
+        prev.map((q) =>
+          q.question_id === questionId ? { ...q, likes:likes } : q
+        )
+      );
+    }
+
     socket.on('receiveQuestion', handleReceiveQuestion);
     socket.on('updateQuestion', onUpdated);
     socket.on('deleteQuestion', onDeleted);
+    socket.on('updateLikes', handleLikes);
 
     return () => {
       socket.off('receiveQuestion', handleReceiveQuestion);
       socket.off('updateQuestion', onUpdated);
       socket.off('deleteQuestion', onDeleted);
+      socket.off('updateLikes', handleLikes);
     };
   }, [socket]);
 

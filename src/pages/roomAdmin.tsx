@@ -132,12 +132,22 @@ const RoomAdmin = () => {
       e.preventDefault();
       e.returnValue = '';
     };
+    const handleLikes = ({ questionId, likes }: { questionId: number, likes:number }) =>{
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.question_id === questionId ? { ...q, likes:likes } : q
+        )
+      )};
 
     socket.on('receiveQuestion', handleReceiveQuestion);
+    socket.on('updateLikes', handleLikes);
+
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       socket.off('receiveQuestion', handleReceiveQuestion);
+      socket.off('updateLikes', handleLikes);
+
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
