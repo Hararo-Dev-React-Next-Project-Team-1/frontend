@@ -4,7 +4,7 @@ import axiosInstance from './axiosInstance';
 export const postLike = async (
   roomId: number,
   questionId: number
-): Promise<string> => {
+): Promise<{ message: string; likes: number }> => {
   try {
     const response = await axiosInstance.post(
       `/rooms/${roomId}/questions/${questionId}/likes`
@@ -13,13 +13,13 @@ export const postLike = async (
       // 소켓 내부 좋아요 기능 호출
       return response.data;
     }
-    return '요청 실패';
+    return { message: `요청 오류`, likes: -1 };
   } catch (error: any) {
     const code = error.response?.status;
     const msg = error.response?.data?.error || '오류가 발생했습니다.';
-    if (code === 400) return `요청 오류: ${msg}`;
-    if (code === 404) return `질문 없음: ${msg}`;
-    return '서버 오류 또는 네트워크 문제입니다.';
+    if (code === 400) return { message: `요청 오류: ${msg}`, likes: -1 };
+    if (code === 404) return { message: `질문 없음: ${msg}`, likes: -1 };
+    return { message: `요청 오류`, likes: -1 };
   }
 };
 
@@ -27,21 +27,20 @@ export const postLike = async (
 export const deleteLike = async (
   roomId: number,
   questionId: number
-): Promise<string> => {
+): Promise<{ message: string; likes: number }> => {
   try {
     const response = await axiosInstance.delete(
       `/rooms/${roomId}/questions/${questionId}/likes`
     );
     if (response.status === 200) {
-      // 소켓 내부 좋아요 기능 호출
       return response.data;
     }
-    return '요청 실패';
+    return { message: `요청 오류`, likes: -1 };
   } catch (error: any) {
     const code = error.response?.status;
     const msg = error.response?.data?.error || '오류가 발생했습니다.';
-    if (code === 403) return `권한 없음: ${msg}`;
-    if (code === 404) return `좋아요 기록 없음: ${msg}`;
-    return '서버 오류 또는 네트워크 문제입니다.';
+    if (code === 400) return { message: `요청 오류: ${msg}`, likes: -1 };
+    if (code === 404) return { message: `질문 없음: ${msg}`, likes: -1 };
+    return { message: `요청 오류`, likes: -1 };
   }
 };

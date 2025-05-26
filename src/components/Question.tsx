@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { DotsIcon } from '../assets/DotsIcon';
 import CheckSmall from '../assets/CheckSmall.tsx';
 import { ThumbIcon } from '../assets/ThumbIcon';
@@ -31,7 +31,6 @@ export const Question = ({
   is_answered,
   isLecturer,
   visitorId,
-  roomSocketId,
   onUpdate,
   onDelete,
 }: QuestionProps) => {
@@ -99,21 +98,16 @@ export const Question = ({
 
     const newLikeState = !isLiked;
     setIsLiked(newLikeState);
-    setLikeCount((prev) => prev + (newLikeState ? 1 : -1)); // optimistic UI
+    setLikeCount((prev) => parseInt(String(prev)) + (newLikeState ? 1 : -1)); // optimistic UI
 
-    const result = newLikeState
+    const result: { message: string; likes: number } = newLikeState
       ? await postLike(parseInt(roomId, 10), parseInt(question_id, 10))
       : await deleteLike(parseInt(roomId, 10), parseInt(question_id, 10));
-
-    if (
-      result.startsWith('요청') ||
-      result.startsWith('오류') ||
-      result.startsWith('서버')
-    ) {
+    if (result.likes == -1) {
       // 실패했으면 되돌리기
       setIsLiked((prev) => !prev);
       setLikeCount((prev) => prev + (newLikeState ? -1 : 1));
-      alert(result);
+      alert(result.message);
     }
   };
 
@@ -217,14 +211,14 @@ export const Question = ({
               )}
             </div>
           )}
-          {/* {isLecturer && (
+          {isLecturer && (
             <div
               className="w-6 h-5 mr-2 cursor-pointer relative"
               onClick={() => checkClick(question_id)}
             >
               <CheckSmall />
             </div>
-          )} */}
+          )}
         </div>
       </div>
     </div>
