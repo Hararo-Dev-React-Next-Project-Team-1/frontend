@@ -130,20 +130,6 @@ const RoomStudent = () => {
     }
   };
 
-  const handleUpdate = useCallback((id: string | number, newText: string) => {
-    setQesList(prev =>
-      prev.map(q =>
-        q.question_id === String(id) ? { ...q, text: newText } : q
-      )
-    );
-  }, []);
-
-  const handleDelete = useCallback((id: string | number) => {
-    setQesList(prev =>
-      prev.filter(q => q.question_id !== String(id))
-    );
-  }, []);
-
   const clickDown = async () => {
     if (roomId) {
       await downloadFile(roomId, roomInfo.file_name);
@@ -163,6 +149,7 @@ const RoomStudent = () => {
   const viewClick = () => {
     console.log('viewClick');
   };
+
 
   return (
     <div className="w-full flex flex-col items-center py-20 gap-12">
@@ -203,8 +190,6 @@ const RoomStudent = () => {
                 isLecturer={false}
                 visitorId={visitorId}
                 roomSocketId={roomSocketId}
-                onUpdate={handleUpdate}
-                onDelete={handleDelete}
               />
             ))}
             {(!qesList || qesList.length === 0) && (
