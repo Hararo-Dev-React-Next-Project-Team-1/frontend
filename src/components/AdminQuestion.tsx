@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import { UserIcon } from '../assets/UserIcon';
 import { type QuestionType } from '../apis/questions';
-import { useNavigate } from 'react-router-dom';
 
 interface QuestionProps extends QuestionType {
   isAdmin: boolean;

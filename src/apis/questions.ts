@@ -6,7 +6,7 @@ export interface QuestionType {
   creator_id: string;
   created_at: string;
   text: string;
-  likes: string;
+  likes: number;
   is_answered?: boolean;
 }
 

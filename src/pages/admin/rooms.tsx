@@ -3,6 +3,7 @@ import RoomHeader from '../../components/RoomHeader.tsx';
 import Sorting from '../../assets/Sorting.svg?react';
 import { AdminQuestion } from '../../components/AdminQuestion.tsx';
 import { useNavigate } from 'react-router-dom';
+import { getAllRooms} from '../../apis/admin';
 
 type Room = {
   room_id: string;
@@ -20,9 +21,8 @@ const AdminRooms = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const res = await fetch('/api/admin/rooms');
-        const data = await res.json();
-        setRooms(data.rooms); // 서버 응답 형식이 { rooms: [...] }일 경우
+        const data = await getAllRooms();
+        setRooms(data);
       } catch (err) {
         console.error('❌ 방 목록 불러오기 실패:', err);
       } finally {
@@ -62,11 +62,11 @@ const AdminRooms = () => {
           {rooms.map((room) => (
             <AdminQuestion
               key={room.room_id}
-              // <AdminQuestion>의 QuestionType 형식을 맞추기 위한 임의값값
+              // <AdminQuestion>의 QuestionType 형식을 맞추기 위한 임의값
               question_id={''}
               creator_id={''}
               text={''}
-              likes={'0'}
+              likes={0}
 
               {...room}
               isAdmin={true}

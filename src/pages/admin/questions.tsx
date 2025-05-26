@@ -2,23 +2,9 @@ import { useEffect, useState } from 'react';
 import RoomHeader from '../../components/RoomHeader';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { downloadFile } from '../../apis/room.ts';
+import { getAllRooms, getAdminRoomDetail } from '../../apis/admin';
 import { AdminQuestion } from '../../components/AdminQuestion.tsx';
-
-export type Room = {
-  room_id: string;
-  code: string;
-  title: string;
-  created_at: string;
-  file_name: string;
-  room_title: string;
-};
-
-type Question = {
-  question_id: number;
-  text: string;
-  created_at: string;
-  likes: number;
-};
+import type { Room, Question } from '../../types/index.ts';
 
 const AdminQuestions = () => {
   const [roomInfo, setRoomInfo] = useState<Room>({
@@ -27,7 +13,6 @@ const AdminQuestions = () => {
     title: '강의 제목',
     created_at: '',
     file_name: '',
-    room_title: '',
   });
   const [questions, setQuestions] = useState<Question[]>([]);
   const [searchParams] = useSearchParams();
@@ -40,21 +25,15 @@ const AdminQuestions = () => {
       if (!roomId) return;
 
       try {
-        // 1. 전체 방 목록 가져옴
-        const allRoomsRes = await fetch('/api/admin/rooms');
-        const allRoomsData = await allRoomsRes.json();
-
-        // 2. 해당 roomId에 해당하는 방 정보 추출
-        const matchedRoom = allRoomsData.rooms.find(
-          (room: Room) => room.room_id === roomId
-        );
-
+        // 모든 방 조회
+        const allRooms = await getAllRooms();
+        // path 파라미터로 전달된 room id와 일치하는 방 정보 조회 (title 가져오기 위함)
+        const matchedRoom = allRooms.find(room => room.room_id === roomId);
         if (matchedRoom) setRoomInfo(matchedRoom);
 
-        // 3. 질문 목록 fetch
-        const questionsRes = await fetch(`/api/admin/rooms/${roomId}`);
-        const questionsData = await questionsRes.json();
-        setQuestions(questionsData.questions);
+        // 특정 room id에 일치하는 방의 모든 질문 조회
+        const questionList = await getAdminRoomDetail(roomId);
+        setQuestions(questionList);
       } catch (err) {
         console.error('❌ 방 정보 또는 질문 목록 가져오기 실패:', err);
       }
@@ -98,7 +77,7 @@ const AdminQuestions = () => {
                 question_id={q.question_id.toString()}
                 text={q.text}
                 created_at={q.created_at}
-                likes={q.likes.toString()}
+                likes={q.likes}
                 isAdmin={true}
                 isEditable={true}
                 complete={true}
