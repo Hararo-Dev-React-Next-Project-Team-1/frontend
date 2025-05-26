@@ -91,11 +91,10 @@ const RoomStudent = () => {
       setQesList((prev) => [...prev, newQuestion]);
     };
 
-    const onUpdated = (payload: { question: QuestionType }) => {
-      const { question } = payload;
+    const onUpdated = ({ question }: { question: QuestionType }) => {
       setQesList((prev) =>
         prev.map((q) =>
-          q.question_id === String(question.question_id)
+          String(q.question_id) === String(question.question_id)
             ? { ...q, text: question.text }
             : q
         )

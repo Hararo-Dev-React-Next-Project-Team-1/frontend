@@ -168,7 +168,7 @@ export const Question = ({
               </div>
             </div>
           ) : (
-            <div>{editedText}</div>
+            <div>{text}</div>
           )}
         </div>
         {/* 좋아요, 더보기 버튼 */}
