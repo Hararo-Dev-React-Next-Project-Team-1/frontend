@@ -13,12 +13,10 @@ import { postLike, deleteLike } from '../apis/like';
 import { useSearchParams } from 'react-router-dom';
 
 interface QuestionProps extends QuestionType {
-  checkClick?: (questions_id: number) => void;
+  checkClick?: (questions_id: string) => void;
   isLecturer: boolean;
   visitorId?: string;
   roomSocketId?: string | null;
-  onUpdate?: (questionId: number, text: string) => void;
-  onDelete?: (questionId: number) => void;
 }
 
 export const Question = ({
@@ -31,8 +29,6 @@ export const Question = ({
   is_answered,
   isLecturer,
   visitorId,
-  onUpdate,
-  onDelete,
 }: QuestionProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
@@ -62,8 +58,6 @@ export const Question = ({
       return alert(result);
     }
 
-    onUpdate?.(parseInt(question_id, 10), result.text);
-
     setEditedText(result.text);
     setIsEditing(false);
     setShowMenu(false);
@@ -84,8 +78,6 @@ export const Question = ({
       parseInt(roomId, 10)
     );
     if (res === '삭제 성공') {
-      onDelete?.(parseInt(question_id, 10));
-
       setShowMenu(false);
     } else {
       alert(res);
@@ -110,6 +102,11 @@ export const Question = ({
       alert(result.message);
     }
   };
+  const gun = () => {
+    if(checkClick){
+      checkClick(question_id)
+    }
+  }
 
   return (
     <div
@@ -214,7 +211,7 @@ export const Question = ({
           {isLecturer && (
             <div
               className="w-6 h-5 mr-2 cursor-pointer relative"
-              onClick={() => checkClick(question_id)}
+              onClick={() => gun()}
             >
               <CheckSmall />
             </div>
