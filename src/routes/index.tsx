@@ -32,12 +32,11 @@ const router = createBrowserRouter([
         element: <RoomStudent />,
       },
       {
-
         path: '/admin/rooms',
         element: <AdminRooms />,
       },
       {
-        path: '/admin/questions/*',
+        path: '/admin/rooms/:roomId',
         element: <AdminQuestions />,
       },
       {

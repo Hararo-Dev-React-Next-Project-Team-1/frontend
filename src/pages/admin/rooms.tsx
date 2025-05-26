@@ -1,57 +1,40 @@
+import React, { useEffect, useState } from 'react';
 import RoomHeader from '../../components/RoomHeader.tsx';
 import Sorting from '../../assets/Sorting.svg?react';
 import { AdminQuestion } from '../../components/AdminQuestion.tsx';
+import { useNavigate } from 'react-router-dom';
+import { getAllRooms} from '../../apis/admin';
+
 type Room = {
-  id: string | null;
+  room_id: string;
   code: string;
   title: string;
   created_at: string;
   file_name: string;
-  room_title: string;
 };
 const AdminRooms = () => {
-  const dumpData: Room[] = [
-    {
-      id: '1',
-      code: '1234',
-      title: 'title 1',
-      created_at: '2025-05-16T09:45:00Z',
-      file_name: '파일 이름 1',
-      room_title: 'Hooks 파헤치기',
-    },
-    {
-      id: '2',
-      code: '5678',
-      title: 'title 2',
-      created_at: '2025-05-16T09:45:00Z',
-      room_title: 'Hooks 파헤치기',
-      file_name: '파일 이름 2',
-    },
-    {
-      id: '3',
-      code: '112233',
-      title: 'title 3',
-      created_at: '2025-05-16T09:45:00Z',
-      file_name: '파일 이름 3',
-      room_title: 'Hooks 파헤치기',
-    },
-    {
-      id: '4',
-      code: '445566',
-      title: 'title 4',
-      created_at: '2025-05-16T09:45:00Z',
-      file_name: '파일 이름 4',
-      room_title: 'Hooks 파헤치기',
-    },
-    {
-      id: '5',
-      code: '778899',
-      title: 'title 5',
-      created_at: '2025-05-16T09:45:00Z',
-      file_name: '파일 이름 5',
-      room_title: 'Hooks 파헤치기',
-    },
-  ];
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const data = await getAllRooms();
+        setRooms(data);
+      } catch (err) {
+        console.error('❌ 방 목록 불러오기 실패:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRooms();
+  }, []);
+
+  if (loading) return <div>로딩 중...</div>;
+
   return (
     <div className="w-full flex flex-col items-center py-20 gap-12">
       <div
@@ -73,24 +56,24 @@ const AdminRooms = () => {
           <span className="font-semibold text-xl absolute left-1/2 -translate-x-1/2">
             과거 방 조회
           </span>
-          <span className="font-semibold">{dumpData.length} Rooms</span>
+          <span className="font-semibold">{rooms.length} Rooms</span>
         </div>
         <div className="w-full grid grid-cols-2 gap-6">
-          {dumpData?.map((question) => (
+          {rooms.map((room) => (
             <AdminQuestion
-              question_id={
-                isNaN(parseInt(question.id || '0'))
-                  ? 0
-                  : parseInt(question.code)
-              }
+              key={room.room_id}
+              // <AdminQuestion>의 QuestionType 형식을 맞추기 위한 임의값
+              question_id={''}
+              creator_id={''}
               text={''}
               likes={0}
-              key={question.id}
-              {...question}
+
+              {...room}
               isAdmin={true}
               isEditable={true}
               complete={true}
-              roomTitle={question.room_title}
+              roomTitle={room.title}
+              onClick={() => navigate(`/admin/rooms/${room.room_id}?code=${room.code}`)}
             />
           ))}
         </div>

@@ -1,67 +1,53 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import RoomHeader from '../../components/RoomHeader';
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { downloadFile } from '../../apis/room.ts';
+import { getAllRooms, getAdminRoomDetail } from '../../apis/admin';
 import { AdminQuestion } from '../../components/AdminQuestion.tsx';
-
-export type Room = {
-  id: string | null;
-  code: string;
-  title: string;
-  created_at: string;
-  file_name: string;
-  room_title: string;
-};
+import type { Room, Question } from '../../types/index.ts';
 
 const AdminQuestions = () => {
-  const dumpData = [
-    {
-      question_id: 1,
-      text: '프론트엔드와 백엔드의 가장 큰 차이점은 무엇인가요?',
-      created_at: '2025-05-16T09:00:00Z',
-      is_selected: false,
-      likes: 12,
-    },
-    {
-      question_id: 2,
-      text: 'React에서 상태 관리를 어떤 방식으로 하나요?',
-      created_at: '2025-05-16T09:15:00Z',
-      is_selected: false,
-      likes: 25,
-    },
-    {
-      question_id: 3,
-      text: 'CORS 에러는 왜 발생하고 어떻게 해결하나요?',
-      created_at: '2025-05-16T09:30:00Z',
-      is_selected: false,
-      likes: 8,
-    },
-    {
-      question_id: 4,
-      text: 'TypeScript의 유틸리티 타입 중 가장 자주 쓰는 것은?',
-      created_at: '2025-05-16T09:45:00Z',
-      is_selected: false,
-      likes: 17,
-    },
-  ];
   const [roomInfo, setRoomInfo] = useState<Room>({
-    id: '-1',
+    room_id: '-1',
     code: '-1',
     title: '강의 제목',
     created_at: '',
     file_name: '',
-    room_title: '',
   });
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [searchParams] = useSearchParams();
 
-  const roomId = searchParams.get('room-id');
-  const enterCode = searchParams.get('enter-code');
+  const { roomId } = useParams();
+  const enterCode = searchParams.get('code');
+
+  useEffect(() => {
+    const fetchRoomData = async () => {
+      if (!roomId) return;
+
+      try {
+        // 모든 방 조회
+        const allRooms = await getAllRooms();
+        // path 파라미터로 전달된 room id와 일치하는 방 정보 조회 (title 가져오기 위함)
+        const matchedRoom = allRooms.find(room => room.room_id === roomId);
+        if (matchedRoom) setRoomInfo(matchedRoom);
+
+        // 특정 room id에 일치하는 방의 모든 질문 조회
+        const questionList = await getAdminRoomDetail(roomId);
+        setQuestions(questionList);
+      } catch (err) {
+        console.error('❌ 방 정보 또는 질문 목록 가져오기 실패:', err);
+      }
+    };
+
+    fetchRoomData();
+  }, [roomId]);
 
   const clickDown = async () => {
     if (roomId) {
       await downloadFile(roomId, roomInfo.file_name);
     }
   };
+
 
   return (
     <div className="w-full flex flex-col items-center py-20 gap-12">
@@ -82,17 +68,24 @@ const AdminQuestions = () => {
         </div>
         {/* 질문 목록 */}
         <div className="w-full flex flex-col items-center gap-6">
-          {dumpData?.map((question) => (
-            // 질문 조회 API 연동 후 isEditable 처리
-            <AdminQuestion
-              roomTitle={''}
-              key={question.question_id}
-              {...question}
-              isAdmin={false}
-              isEditable={true}
-              complete={false}
-            />
+          {questions.map((q) => (
+            roomId && (
+              <AdminQuestion
+                room_id={roomId}
+                roomTitle={roomInfo.title}
+                creator_id={''}
+                question_id={q.question_id.toString()}
+                text={q.text}
+                created_at={q.created_at}
+                likes={q.likes}
+                isAdmin={true}
+                isEditable={true}
+                complete={true}
+                key={q.question_id}
+              />
+            )
           ))}
+
         </div>
       </div>
     </div>
