@@ -1,12 +1,15 @@
 import User from '../assets/User.svg?react';
+import { useState } from 'react';
 type Props = {
   onChange: (userChat: string) => void;
   sendChat: () => void;
 };
 
 const ChatInput = ({ onChange, sendChat }: Props) => {
+  const [isComposing, setIsComposing] = useState(false);
+
   const activeEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !isComposing) {
       sendChat();
       e.currentTarget.value = '';
     }
@@ -22,7 +25,9 @@ const ChatInput = ({ onChange, sendChat }: Props) => {
         placeholder={'질문을 입력하세요.'}
         className="flex-1 outline-none text-xl font-semibold placeholder:text-[#B1B1B1] text-black"
         onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => activeEnter(e)}
+        onCompositionStart={() => setIsComposing(true)}
+        onCompositionEnd={() => setIsComposing(false)}
+        onKeyDown={activeEnter}
       />
     </div>
   );
