@@ -38,8 +38,6 @@ const RoomStudent = () => {
   });
   const [visitorId, setVisitorId] = useState('');
 
-  // Socket 상태 관리
-  const [connected, setConnected] = useState(false);
   const [roomSocketId, setRoomSocketId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -132,6 +130,20 @@ const RoomStudent = () => {
     }
   };
 
+  const handleUpdate = useCallback((id: string | number, newText: string) => {
+    setQesList(prev =>
+      prev.map(q =>
+        q.question_id === String(id) ? { ...q, text: newText } : q
+      )
+    );
+  }, []);
+
+  const handleDelete = useCallback((id: string | number) => {
+    setQesList(prev =>
+      prev.filter(q => q.question_id !== String(id))
+    );
+  }, []);
+
   const clickDown = async () => {
     if (roomId) {
       await downloadFile(roomId, roomInfo.file_name);
@@ -191,20 +203,15 @@ const RoomStudent = () => {
                 isLecturer={false}
                 visitorId={visitorId}
                 roomSocketId={roomSocketId}
-                onUpdate={(id, newText) =>
-                  setQesList((prev) =>
-                    prev.map((q) =>
-                      q.question_id === String(id) ? { ...q, text: newText } : q
-                    )
-                  )
-                }
-                onDelete={(id) =>
-                  setQesList((prev) =>
-                    prev.filter((q) => q.question_id !== String(id))
-                  )
-                }
+                onUpdate={handleUpdate}
+                onDelete={handleDelete}
               />
             ))}
+            {(!qesList || qesList.length === 0) && (
+              <span className="w-full p-12 text-center font-semibold text-xl text-[var(--color-gray-2)] ">
+                아직 질문이 없습니다.
+              </span>
+            )}
           </div>
         </div>
       </div>
