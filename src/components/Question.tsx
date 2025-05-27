@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DotsIcon } from '../assets/DotsIcon';
 import CheckSmall from '../assets/CheckSmall.tsx';
 import { ThumbIcon } from '../assets/ThumbIcon';
@@ -17,6 +17,7 @@ interface QuestionProps extends QuestionType {
   isLecturer: boolean;
   visitorId?: string;
   roomSocketId?: string | null;
+  clickBox?: (questions_id: string) => void;
 }
 
 export const Question = ({
@@ -29,6 +30,7 @@ export const Question = ({
   is_answered,
   isLecturer,
   visitorId,
+  clickBox,
 }: QuestionProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
@@ -41,10 +43,15 @@ export const Question = ({
   const roomId = searchParams.get('room-id') || '';
 
   //선택한 질문 하이라이팅
-  const handleBoxClick = () => {
+  const handleBoxClick = (questionId: string) => {
+    console.log('handleBoxClick 실행');
     if (!isLecturer) return;
-    setSelectedBox((prev) => !prev);
+    if (clickBox) clickBox(questionId);
   };
+
+  useEffect(() => {
+    setSelectedBox(is_answered);
+  }, [is_answered]);
 
   //수정 확인
   const handleSave = async () => {
@@ -103,14 +110,14 @@ export const Question = ({
     }
   };
   const gun = () => {
-    if(checkClick){
-      checkClick(question_id)
+    if (checkClick) {
+      checkClick(question_id);
     }
-  }
+  };
 
   return (
     <div
-      onClick={handleBoxClick}
+      onClick={() => handleBoxClick(question_id)}
       className={`flex flex-row w-full h-fit py-4 px-8 rounded-2xl shadow-[0_0_4px_1px_rgba(51,196,168,0.75)] 
         ${selectedBox ? 'bg-[#E1F4F0]' : 'bg-white'}
         ${isLecturer ? 'cursor-pointer' : ''}
@@ -211,7 +218,10 @@ export const Question = ({
           {isLecturer && (
             <div
               className="w-6 h-5 mr-2 cursor-pointer relative"
-              onClick={() => gun()}
+              onClick={(e) => {
+                e.stopPropagation();
+                gun();
+              }}
             >
               <CheckSmall />
             </div>
@@ -221,3 +231,5 @@ export const Question = ({
     </div>
   );
 };
+
+//

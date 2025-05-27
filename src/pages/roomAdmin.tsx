@@ -9,10 +9,11 @@ import { downloadFile, exitRoom, getRoomInfo } from '../apis/room.ts';
 import {
   answerQuestion,
   getQuestionlist,
+  highlightQuestion,
   type QuestionType,
 } from '../apis/questions.ts';
 import socket from '../lib/socket.ts'; // socket.ts 유지
-
+import { sortedByLikes, sortedByCreatedAt } from '../lib/questions.ts';
 export type Room = {
   id: string | null;
   code: string;
@@ -22,36 +23,6 @@ export type Room = {
 };
 
 const RoomAdmin = () => {
-  const dumpData = [
-    {
-      question_id: 1,
-      text: '프론트엔드와 백엔드의 가장 큰 차이점은 무엇인가요?',
-      created_at: '2025-05-16T09:00:00Z',
-      is_selected: false,
-      likes: 12,
-    },
-    {
-      question_id: 2,
-      text: 'React에서 상태 관리를 어떤 방식으로 하나요?',
-      created_at: '2025-05-16T09:15:00Z',
-      is_selected: true,
-      likes: 25,
-    },
-    {
-      question_id: 3,
-      text: 'CORS 에러는 왜 발생하고 어떻게 해결하나요?',
-      created_at: '2025-05-16T09:30:00Z',
-      is_selected: false,
-      likes: 8,
-    },
-    {
-      question_id: 4,
-      text: 'TypeScript의 유틸리티 타입 중 가장 자주 쓰는 것은?',
-      created_at: '2025-05-16T09:45:00Z',
-      is_selected: false,
-      likes: 17,
-    },
-  ];
   const [isLive, setLive] = useState(false);
   const [roomInfo, setRoomInfo] = useState<Room>({
     id: '-1',
@@ -64,6 +35,9 @@ const RoomAdmin = () => {
   const [connected, setConnected] = useState(false);
   const [roomSocketId, setRoomSocketId] = useState<string | null>(null);
   const [isRecent, setIsRecent] = useState(true);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const highlightedIdRef = useRef<string | null>(null);
+
   const isRecentRef = useRef(isRecent);
   useEffect(() => {
     isRecentRef.current = isRecent;
@@ -99,9 +73,9 @@ const RoomAdmin = () => {
         const res = await getQuestionlist(parseInt(roomId));
         if (res) {
           if (isRecent) {
-            setQuestions(sortedByCreatedAt(res));
+            setQuestions(sortedByCreatedAt(res, highlightedId));
           } else {
-            setQuestions(sortedByLikes(res));
+            setQuestions(sortedByLikes(res, highlightedId));
           }
         }
       }
@@ -122,44 +96,96 @@ const RoomAdmin = () => {
       setQuestions((prev) => {
         const updated = [...prev, newQuestion];
         if (isRecentRef.current) {
-          return sortedByCreatedAt(updated);
+          return sortedByCreatedAt(updated, highlightedIdRef.current);
         } else {
-          return sortedByLikes(updated);
+          return sortedByLikes(updated, highlightedIdRef.current);
         }
       });
     };
+
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = '';
     };
 
+    const handleUpdate = ({ question }: { question: QuestionType }) => {
+      setQuestions((prev) => {
+        const updated = prev.map((q) => {
+          if (String(q.question_id) === String(question.question_id)) {
+            return {
+              ...question,
+              is_answered: q.question_id === highlightedIdRef.current,
+            };
+          }
+          return q;
+        });
+
+        return isRecentRef.current
+          ? sortedByCreatedAt(updated, highlightedIdRef.current)
+          : sortedByLikes(updated, highlightedIdRef.current);
+      });
+    };
+
+    const handleDeleteQuestion = ({ question_id }: { question_id: string }) => {
+      setQuestions((prev) => {
+        const updated = prev.filter(
+          (q) => String(q.question_id) !== String(question_id)
+        );
+        return updated;
+      });
+
+      if (highlightedId === question_id) {
+        setHighlightedId(null);
+      }
+    };
+
     socket.on('receiveQuestion', handleReceiveQuestion);
+    socket.on('updateQuestion', handleUpdate);
+    socket.on('deleteQuestion', handleDeleteQuestion);
+
+    socket.on('receiveHighlight', (data: { question_id: string }) => {
+      setHighlightedId(data.question_id);
+    });
+
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       socket.off('receiveQuestion', handleReceiveQuestion);
+      socket.off('receiveHighlight');
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
 
-  const sortedByCreatedAt = (questions: QuestionType[]) => {
-    return [...questions].sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-  };
-  const sortedByLikes = (questions: QuestionType[]) => {
-    return [...questions].sort(
-      (a, b) => parseInt(String(b.likes)) - parseInt(String(a.likes))
-    );
-  };
+  useEffect(() => {
+    highlightedIdRef.current = highlightedId;
+  }, [highlightedId]);
+
   useEffect(() => {
     if (isRecent) {
-      setQuestions(sortedByCreatedAt(questions));
+      setQuestions(sortedByCreatedAt(questions, highlightedId));
     } else {
-      setQuestions(sortedByLikes(questions));
+      setQuestions(sortedByLikes(questions, highlightedId));
     }
   }, [isRecent]);
+
+  useEffect(() => {
+    if (!highlightedId) return;
+
+    setQuestions((prev) => {
+      const updated = prev.map((q) => ({
+        ...q,
+        is_answered: q.question_id === highlightedId,
+      }));
+
+      const sorted = updated.sort((a, b) => {
+        if (a.question_id === highlightedId) return -1;
+        if (b.question_id === highlightedId) return 1;
+        return 0;
+      });
+
+      return sorted;
+    });
+  }, [highlightedId]);
 
   const joinRoom = () => {
     if (!roomId) return;
@@ -189,16 +215,16 @@ const RoomAdmin = () => {
     }
   };
 
-  const clickCheck = async (questionId: number) => {
+  const clickCheck = async (questionId: string) => {
     if (roomId && questionId) {
       const res = await answerQuestion(roomId, questionId);
       if (res) {
         const updated = await getQuestionlist(parseInt(roomId));
         if (updated) {
           if (isRecent) {
-            setQuestions(sortedByCreatedAt(updated));
+            setQuestions(sortedByCreatedAt(updated, highlightedId));
           } else {
-            setQuestions(sortedByLikes(updated));
+            setQuestions(sortedByLikes(updated, highlightedId));
           }
         }
       }
@@ -223,6 +249,9 @@ const RoomAdmin = () => {
   // view as participant 버튼 클릭
   const viewClick = () => {
     console.log('viewClick');
+  };
+  const handleHighLight = async (questionId: string) => {
+    await highlightQuestion(roomId, questionId);
   };
 
   return (
@@ -256,7 +285,7 @@ const RoomAdmin = () => {
               <span>자료 다운로드</span>
             </div>
           </div>
-          <span className="font-semibold">{dumpData.length} Questions</span>
+          <span className="font-semibold">{questions.length} Questions</span>
         </div>
         {/* 질문 목록 */}
         <div className="w-full flex flex-col items-center gap-6">
@@ -266,6 +295,8 @@ const RoomAdmin = () => {
               {...question}
               isLecturer={true}
               checkClick={clickCheck}
+              clickBox={handleHighLight}
+              is_answered={question.is_answered}
             />
           ))}
           {(!questions || questions.length === 0) && (
