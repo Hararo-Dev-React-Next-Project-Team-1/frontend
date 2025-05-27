@@ -13,6 +13,7 @@ import {
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { downloadFile, getRoomInfo } from '../apis/room.ts';
 import socket from '../lib/socket.ts';
+import { sortedByCreatedAt, sortedByLikes } from '../lib/questions.ts';
 
 type Room = {
   id: string | null;
@@ -33,6 +34,9 @@ const RoomStudent = () => {
   const [roomClosed, setRoomClosed] = useState(false);
 
   const [isRecent, setIsRecent] = useState(true);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const highlightedIdRef = useRef<string | null>(null);
+
   const isRecentRef = useRef(isRecent);
   useEffect(() => {
     isRecentRef.current = isRecent;
@@ -76,7 +80,13 @@ const RoomStudent = () => {
   const fetchQuestions = useCallback(async () => {
     if (!roomId) return;
     const res = await getQuestionlist(parseInt(roomId, 10));
-    setQesList(res ?? []);
+    if (res) {
+      if (isRecent) {
+        setQesList(sortedByCreatedAt(res, highlightedId));
+      } else {
+        setQesList(sortedByLikes(res, highlightedId));
+      }
+    }
   }, [roomId]);
 
   useEffect(() => {
@@ -96,23 +106,45 @@ const RoomStudent = () => {
 
   useEffect(() => {
     const handleReceiveQuestion = (newQuestion: QuestionType) => {
-      setQesList((prev) => [...prev, newQuestion]);
+      setQesList((prev) => {
+        const updated = [...prev, newQuestion];
+        if (isRecentRef.current) {
+          return sortedByCreatedAt(updated, highlightedIdRef.current);
+        } else {
+          return sortedByLikes(updated, highlightedIdRef.current);
+        }
+      });
     };
 
     const onUpdated = ({ question }: { question: QuestionType }) => {
-      setQesList((prev) =>
-        prev.map((q) =>
-          String(q.question_id) === String(question.question_id)
-            ? { ...q, text: question.text }
-            : q
-        )
-      );
+      setQesList((prev) => {
+        const updated = prev.map((q) => {
+          if (q.question_id === question.question_id) {
+            return {
+              ...question,
+              is_answered: q.question_id === highlightedIdRef.current,
+            };
+          }
+          return q;
+        });
+
+        return isRecentRef.current
+          ? sortedByCreatedAt(updated, highlightedIdRef.current)
+          : sortedByLikes(updated, highlightedIdRef.current);
+      });
     };
 
     const onDeleted = ({ question_id }: { question_id: number }) => {
-      setQesList((prev) =>
-        prev.filter((q) => q.question_id !== String(question_id))
-      );
+      setQesList((prev) => {
+        const updated = prev.filter(
+          (q) => String(q.question_id) !== String(question_id)
+        );
+        return updated;
+      });
+
+      if (highlightedId === String(question_id)) {
+        setHighlightedId(null);
+      }
     };
 
     const handleLikes = ({
@@ -122,11 +154,22 @@ const RoomStudent = () => {
       questionId: number;
       likes: number;
     }) => {
-      setQesList((prev) =>
-        prev.map((q) =>
-          q.question_id === String(questionId) ? { ...q, likes: likes } : q
-        )
-      );
+      setQesList((prev) => {
+        const updated = prev.map((q) => {
+          if (String(q.question_id) === String(questionId)) {
+            return {
+              ...q,
+              is_answered: q.question_id === highlightedIdRef.current,
+              likes: likes,
+            };
+          }
+          return q;
+        });
+
+        return isRecentRef.current
+          ? sortedByCreatedAt(updated, highlightedIdRef.current)
+          : sortedByLikes(updated, highlightedIdRef.current);
+      });
     };
 
     const handleRoomClosed = () => {
@@ -135,11 +178,31 @@ const RoomStudent = () => {
       setRoomSocketId(null);
     };
 
+    const handleCheck = ({ question_id }: { question_id: number }) => {
+      setQesList((prev) => {
+        const updated = prev.filter(
+          (q) => String(q.question_id) !== String(question_id)
+        );
+
+        return isRecentRef.current
+          ? sortedByCreatedAt(updated, highlightedIdRef.current)
+          : sortedByLikes(updated, highlightedIdRef.current);
+      });
+
+      if (highlightedId === String(question_id)) {
+        setHighlightedId(null);
+      }
+    };
+
     socket.on('receiveQuestion', handleReceiveQuestion);
     socket.on('updateQuestion', onUpdated);
     socket.on('deleteQuestion', onDeleted);
     socket.on('updateLikes', handleLikes);
     socket.on('roomClosed', handleRoomClosed);
+    socket.on('checkQuestion', handleCheck);
+    socket.on('receiveHighlight', (data: { question_id: string }) => {
+      setHighlightedId(data.question_id);
+    });
 
     return () => {
       socket.off('receiveQuestion', handleReceiveQuestion);
@@ -147,6 +210,8 @@ const RoomStudent = () => {
       socket.off('deleteQuestion', onDeleted);
       socket.off('updateLikes', handleLikes);
       socket.off('roomClosed', handleRoomClosed);
+      socket.off('receiveHighlight');
+      socket.off('checkQuestion', handleCheck);
     };
   }, [socket, navigate]);
 
@@ -170,25 +235,33 @@ const RoomStudent = () => {
     }
   };
 
-  // 질문 정렬 기능
-  const sortedByCreatedAt = (questions: QuestionType[]) => {
-    return [...questions].sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-  };
-  const sortedByLikes = (questions: QuestionType[]) => {
-    return [...questions].sort(
-      (a, b) => parseInt(String(b.likes)) - parseInt(String(a.likes))
-    );
-  };
   useEffect(() => {
     if (isRecent) {
-      setQesList(sortedByCreatedAt(qesList));
+      setQesList(sortedByCreatedAt(qesList, highlightedId));
     } else {
-      setQesList(sortedByLikes(qesList));
+      setQesList(sortedByLikes(qesList, highlightedId));
     }
   }, [isRecent]);
+
+  useEffect(() => {
+    highlightedIdRef.current = highlightedId;
+    if (!highlightedId) return;
+
+    setQesList((prev) => {
+      const updated = prev.map((q) => ({
+        ...q,
+        is_answered: q.question_id === highlightedId,
+      }));
+
+      const sorted = updated.sort((a, b) => {
+        if (a.question_id === highlightedId) return -1;
+        if (b.question_id === highlightedId) return 1;
+        return 0;
+      });
+
+      return sorted;
+    });
+  }, [highlightedId]);
 
   const clickCheck = async (questionId: string) => {
     if (roomId && questionId) {
@@ -197,9 +270,9 @@ const RoomStudent = () => {
         const updated = await getQuestionlist(parseInt(roomId));
         if (updated) {
           if (isRecent) {
-            setQesList(sortedByCreatedAt(updated));
+            setQesList(sortedByCreatedAt(updated, highlightedId));
           } else {
-            setQesList(sortedByLikes(updated));
+            setQesList(sortedByLikes(updated, highlightedId));
           }
         }
       }
@@ -267,6 +340,7 @@ const RoomStudent = () => {
                   visitorId={visitorId}
                   roomSocketId={roomSocketId}
                   checkClick={clickCheck}
+                  is_answered={question.is_answered}
                 />
               ))}
               {(!qesList || qesList.length === 0) && (
@@ -276,14 +350,14 @@ const RoomStudent = () => {
               )}
             </div>
           </div>
-        </div>
-        <button
-          className="text-center p-4 text-[16px] font-semibold
+          <button
+            className="text-center p-4 text-[16px] font-semibold
     text-white rounded-full bg-[var(--color-primary)] cursor-pointer fixed bottom-6 right-6 shadow-lg hover:scale-105 transition z-50"
-          onClick={closeClick}
-        >
-          나가기
-        </button>
+            onClick={closeClick}
+          >
+            나가기
+          </button>
+        </div>
       </div>
       {roomClosed && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
