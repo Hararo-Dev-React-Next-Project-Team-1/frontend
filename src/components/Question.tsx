@@ -11,9 +11,10 @@ import {
 } from '../apis/questions';
 import { postLike, deleteLike } from '../apis/like';
 import { useSearchParams } from 'react-router-dom';
+import socket from '../lib/socket.ts';
 
 interface QuestionProps extends QuestionType {
-  checkClick?: (questions_id: string) => void;
+  checkClick: (questions_id: string) => void;
   isLecturer: boolean;
   visitorId?: string;
   roomSocketId?: string | null;
@@ -29,6 +30,7 @@ export const Question = ({
   is_answered,
   isLecturer,
   visitorId,
+  roomSocketId
 }: QuestionProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
@@ -95,18 +97,26 @@ export const Question = ({
     const result: { message: string; likes: number } = newLikeState
       ? await postLike(parseInt(roomId, 10), parseInt(question_id, 10))
       : await deleteLike(parseInt(roomId, 10), parseInt(question_id, 10));
+
     if (result.likes == -1) {
       // 실패했으면 되돌리기
       setIsLiked((prev) => !prev);
       setLikeCount((prev) => prev + (newLikeState ? -1 : 1));
       alert(result.message);
     }
+
+    socket.emit('updateLikes', {
+      roomId: roomSocketId,
+      questionId: question_id,
+      likes: result.likes,
+    });
   };
-  const gun = () => {
-    if(checkClick){
-      checkClick(question_id)
-    }
-  }
+
+  // const gun = () => {
+  //   if(checkClick){
+  //     checkClick(question_id)
+  //   }
+  // }
 
   return (
     <div
@@ -178,7 +188,7 @@ export const Question = ({
             }
             `}
           >
-            <div className="text-[12px]">{likeCount}</div>
+            <div className="text-[12px]">{likes}</div>
             <div className="w-4 h-4 flex items-center justify-center">
               <ThumbIcon />
             </div>
@@ -211,7 +221,7 @@ export const Question = ({
           {isLecturer && (
             <div
               className="w-6 h-5 mr-2 cursor-pointer relative"
-              onClick={() => gun()}
+              onClick={() => checkClick(question_id)}
             >
               <CheckSmall />
             </div>
