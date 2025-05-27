@@ -92,6 +92,7 @@ const RoomAdmin = () => {
   }, [roomId]);
 
   useEffect(() => {
+    // 질문 추가
     const handleReceiveQuestion = (newQuestion: QuestionType) => {
       setQuestions((prev) => {
         const updated = [...prev, newQuestion];
@@ -108,10 +109,11 @@ const RoomAdmin = () => {
       e.returnValue = '';
     };
 
+    // 질문 수정
     const handleUpdate = ({ question }: { question: QuestionType }) => {
       setQuestions((prev) => {
         const updated = prev.map((q) => {
-          if (String(q.question_id) === String(question.question_id)) {
+          if (q.question_id === question.question_id) {
             return {
               ...question,
               is_answered: q.question_id === highlightedIdRef.current,
@@ -126,6 +128,7 @@ const RoomAdmin = () => {
       });
     };
 
+    // 질문 삭제
     const handleDeleteQuestion = ({ question_id }: { question_id: string }) => {
       setQuestions((prev) => {
         const updated = prev.filter(
@@ -139,9 +142,37 @@ const RoomAdmin = () => {
       }
     };
 
+    const handleLikes = ({
+      questionId,
+      likes,
+    }: {
+      questionId: number;
+      likes: number;
+    }) => {
+      console.log('걸리니??');
+
+      setQuestions((prev) => {
+        const updated = prev.map((q) => {
+          if (String(q.question_id) === String(questionId)) {
+            return {
+              ...q,
+              is_answered: q.question_id === highlightedIdRef.current,
+              likes: likes,
+            };
+          }
+          return q;
+        });
+
+        return isRecentRef.current
+          ? sortedByCreatedAt(updated, highlightedIdRef.current)
+          : sortedByLikes(updated, highlightedIdRef.current);
+      });
+    };
+
     socket.on('receiveQuestion', handleReceiveQuestion);
     socket.on('updateQuestion', handleUpdate);
     socket.on('deleteQuestion', handleDeleteQuestion);
+    socket.on('updateLikes', handleLikes);
 
     socket.on('receiveHighlight', (data: { question_id: string }) => {
       setHighlightedId(data.question_id);
@@ -152,6 +183,9 @@ const RoomAdmin = () => {
     return () => {
       socket.off('receiveQuestion', handleReceiveQuestion);
       socket.off('receiveHighlight');
+      socket.off('updateQuestion', handleUpdate);
+      socket.off('deleteQuestion', handleDeleteQuestion);
+      socket.off('updateLikes', handleLikes);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
