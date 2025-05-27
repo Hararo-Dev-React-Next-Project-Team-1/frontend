@@ -108,6 +108,12 @@ const RoomAdmin = () => {
       e.preventDefault();
       e.returnValue = '';
     };
+    const handleLikes = ({ questionId, likes }: { questionId: number, likes:number }) =>{
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.question_id === questionId ? { ...q, likes:likes } : q
+        )
+      )};
 
     // 질문 수정
     const handleUpdate = ({ question }: { question: QuestionType }) => {
@@ -178,6 +184,8 @@ const RoomAdmin = () => {
       setHighlightedId(data.question_id);
     });
 
+    socket.on('updateLikes', handleLikes);
+
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
@@ -185,6 +193,7 @@ const RoomAdmin = () => {
       socket.off('receiveHighlight');
       socket.off('updateQuestion', handleUpdate);
       socket.off('deleteQuestion', handleDeleteQuestion);
+      socket.off('updateLikes', handleLikes);
       socket.off('updateLikes', handleLikes);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
