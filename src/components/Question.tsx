@@ -13,7 +13,7 @@ import { postLike, deleteLike } from '../apis/like';
 import { useSearchParams } from 'react-router-dom';
 
 interface QuestionProps extends QuestionType {
-  checkClick?: (questions_id: string) => void;
+  checkClick: (questions_id: string) => void;
   isLecturer: boolean;
   visitorId?: string;
   roomSocketId?: string | null;
@@ -107,11 +107,6 @@ export const Question = ({
       setIsLiked((prev) => !prev);
       setLikeCount((prev) => prev + (newLikeState ? -1 : 1));
       alert(result.message);
-    }
-  };
-  const gun = () => {
-    if (checkClick) {
-      checkClick(question_id);
     }
   };
 
@@ -220,7 +215,7 @@ export const Question = ({
               className="w-6 h-5 mr-2 cursor-pointer relative"
               onClick={(e) => {
                 e.stopPropagation();
-                gun();
+                checkClick(question_id);
               }}
             >
               <CheckSmall />
