@@ -247,7 +247,7 @@ const RoomAdmin = () => {
   const leaveRoom = () => {
     if (!connected || !roomSocketId) return;
 
-    socket.emit('leaveRoom', { roomSocketId });
+    socket.emit('closeRoom', { roomSocketId });
     setConnected(false);
     setRoomSocketId(null);
   };

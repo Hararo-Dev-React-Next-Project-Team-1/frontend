@@ -11,7 +11,7 @@ import {
   type QuestionType,
 } from '../apis/questions.ts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { downloadFile, exitRoom, getRoomInfo } from '../apis/room.ts';
+import { downloadFile, getRoomInfo } from '../apis/room.ts';
 import socket from '../lib/socket.ts';
 
 type Room = {
@@ -30,6 +30,8 @@ const RoomStudent = () => {
 
   const [userChat, setUserChat] = useState('');
   const [connected, setConnected] = useState(false);
+  const [roomClosed, setRoomClosed] = useState(false);
+
   const [isRecent, setIsRecent] = useState(true);
   const isRecentRef = useRef(isRecent);
   useEffect(() => {
@@ -113,26 +115,40 @@ const RoomStudent = () => {
       );
     };
 
-    const handleLikes = ({ questionId, likes }: { questionId: number, likes:number }) =>{
+    const handleLikes = ({
+      questionId,
+      likes,
+    }: {
+      questionId: number;
+      likes: number;
+    }) => {
       setQesList((prev) =>
         prev.map((q) =>
-          q.question_id === questionId ? { ...q, likes:likes } : q
+          q.question_id === String(questionId) ? { ...q, likes: likes } : q
         )
       );
-    }
+    };
+
+    const handleRoomClosed = () => {
+      setRoomClosed(true);
+      setConnected(false);
+      setRoomSocketId(null);
+    };
 
     socket.on('receiveQuestion', handleReceiveQuestion);
     socket.on('updateQuestion', onUpdated);
     socket.on('deleteQuestion', onDeleted);
     socket.on('updateLikes', handleLikes);
+    socket.on('roomClosed', handleRoomClosed);
 
     return () => {
       socket.off('receiveQuestion', handleReceiveQuestion);
       socket.off('updateQuestion', onUpdated);
       socket.off('deleteQuestion', onDeleted);
       socket.off('updateLikes', handleLikes);
+      socket.off('roomClosed', handleRoomClosed);
     };
-  }, [socket]);
+  }, [socket, navigate]);
 
   const sendChat = async () => {
     if (userChat.trim().length === 0) return;
@@ -174,9 +190,9 @@ const RoomStudent = () => {
     }
   }, [isRecent]);
 
-  const clickCheck = async (questionId: number) => {
+  const clickCheck = async (questionId: string) => {
     if (roomId && questionId) {
-      const res = await answerQuestion(roomId, questionId);
+      const res = await answerQuestion(roomId, String(questionId));
       if (res) {
         const updated = await getQuestionlist(parseInt(roomId));
         if (updated) {
@@ -200,8 +216,7 @@ const RoomStudent = () => {
 
   const closeClick = async () => {
     if (roomId) {
-      if (confirm('질문방을 닫으시겠습니까 ?')) {
-        await exitRoom(roomId);
+      if (confirm('방을 나가시겠습니까?')) {
         leaveRoom();
         navigate('/');
       }
@@ -209,64 +224,83 @@ const RoomStudent = () => {
   };
 
   return (
-    <div className="w-full flex flex-col items-center py-20 gap-12">
-      <div className="w-4/5 flex flex-col items-center gap-20">
-        <RoomHeader
-          title={roomInfo.title}
-          dateStr={roomInfo.created_at}
-          roomCode={enterCode}
-        />
-        <ChatInput onChange={setUserChat} sendChat={sendChat} />
-        <div className="w-full flex flex-col items-center gap-6">
-          <div className="w-full flex justify-between items-center text-[16px] text-[#737373]">
-            <div className="flex items-center gap-6">
-              <div
-                className="rounded-xl flex items-center relative
-              px-14 py-3 font-medium border border-[#CFCFCF] cursor-pointer"
-                onClick={() => setIsRecent(!isRecent)}
-              >
-                <Sorting className="absolute left-7" />
-                <span className="min-w-14">{isRecent ? 'Recent' : 'Likes'}</span>
-              </div>
-              <div
-                className="rounded-xl flex items-center relative text-[#289983]
-              px-15 py-3 font-medium border border-[var(--color-primary)] cursor-pointer"
-                onClick={() => clickDown()}
-              >
-                <Link className="absolute left-7" />
-                <span>자료 다운로드</span>
-              </div>
-            </div>
-            <span className="font-semibold">{qesList.length} Questions</span>
-          </div>
+    <>
+      <div className="w-full flex flex-col items-center py-20 gap-12">
+        <div className="w-4/5 flex flex-col items-center gap-20">
+          <RoomHeader
+            title={roomInfo.title}
+            dateStr={roomInfo.created_at}
+            roomCode={enterCode}
+          />
+          <ChatInput onChange={setUserChat} sendChat={sendChat} />
           <div className="w-full flex flex-col items-center gap-6">
-            {qesList?.map((question) => (
-              // 질문 조회 API 연동 후 isEditable 처리
-              <Question
-                key={question.question_id}
-                {...question}
-                isLecturer={false}
-                visitorId={visitorId}
-                roomSocketId={roomSocketId}
-                checkClick={clickCheck}
-              />
-            ))}
-            {(!qesList || qesList.length === 0) && (
-              <span className="w-full p-12 text-center font-semibold text-xl text-[var(--color-gray-2)] ">
-                아직 질문이 없습니다.
-              </span>
-            )}
+            <div className="w-full flex justify-between items-center text-[16px] text-[#737373]">
+              <div className="flex items-center gap-6">
+                <div
+                  className="rounded-xl flex items-center relative
+              px-14 py-3 font-medium border border-[#CFCFCF] cursor-pointer"
+                  onClick={() => setIsRecent(!isRecent)}
+                >
+                  <Sorting className="absolute left-7" />
+                  <span className="min-w-14">
+                    {isRecent ? 'Recent' : 'Likes'}
+                  </span>
+                </div>
+                <div
+                  className="rounded-xl flex items-center relative text-[#289983]
+              px-15 py-3 font-medium border border-[var(--color-primary)] cursor-pointer"
+                  onClick={() => clickDown()}
+                >
+                  <Link className="absolute left-7" />
+                  <span>자료 다운로드</span>
+                </div>
+              </div>
+              <span className="font-semibold">{qesList.length} Questions</span>
+            </div>
+            <div className="w-full flex flex-col items-center gap-6">
+              {qesList?.map((question) => (
+                // 질문 조회 API 연동 후 isEditable 처리
+                <Question
+                  key={question.question_id}
+                  {...question}
+                  isLecturer={false}
+                  visitorId={visitorId}
+                  roomSocketId={roomSocketId}
+                  checkClick={clickCheck}
+                />
+              ))}
+              {(!qesList || qesList.length === 0) && (
+                <span className="w-full p-12 text-center font-semibold text-xl text-[var(--color-gray-2)] ">
+                  아직 질문이 없습니다.
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      <button
-        className="text-center p-4 text-[16px] font-semibold
+        <button
+          className="text-center p-4 text-[16px] font-semibold
     text-white rounded-full bg-[var(--color-primary)] cursor-pointer fixed bottom-6 right-6 shadow-lg hover:scale-105 transition z-50"
-        onClick={closeClick}
-      >
-        나가기
-      </button>
-    </div>
+          onClick={closeClick}
+        >
+          나가기
+        </button>
+      </div>
+      {roomClosed && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-80 text-center">
+            <p className="mb-4 font-medium">⚠️ 방이 닫혔습니다.</p>
+            <button
+              onClick={() => {
+                navigate('/');
+              }}
+              className="px-4 py-2 bg-[var(--color-primary)] text-white rounded hover:bg-[#279882]"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
