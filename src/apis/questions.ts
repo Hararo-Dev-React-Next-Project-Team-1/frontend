@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import axios from 'axios';
 
 export interface QuestionType {
   room_id: string;
@@ -95,13 +96,38 @@ export const deleteQuestion = async (questionId: number, roomId: number) => {
   }
 };
 
-export const answerQuestion = async (roomId: string, questionId: number) => {
+export const answerQuestion = async (roomId: string, questionId: string) => {
   try {
     const response = await axiosInstance.patch(
       `rooms/${roomId}/questions/${questionId}/status`
     );
     return response.data;
-  } catch (error) {
-    console.log('error.response : ', error.response);
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.log('error.response : ', error.response);
+    } else {
+      console.error('Unexpected error', error);
+    }
+  }
+};
+
+export const highlightQuestion = async (
+  roomId: string | null,
+  questionId: string
+) => {
+  try {
+    if (roomId) {
+      return await axiosInstance.patch(`admin/rooms/${roomId}`, {
+        question_id: questionId,
+      });
+    } else {
+      console.log('roomId 없음');
+    }
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.log('error.response : ', error.response);
+    } else {
+      console.error('Unexpected error', error);
+    }
   }
 };
