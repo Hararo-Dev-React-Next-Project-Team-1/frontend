@@ -40,6 +40,7 @@ export const Question = ({
   const [selectedBox, setSelectedBox] = useState(is_answered);
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(text);
+  const [isComposing, setIsComposing] = useState(false);
 
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get('room-id') || '';
@@ -118,6 +119,12 @@ export const Question = ({
       likes: result.likes,
     });
   };
+  const activeEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !isComposing) {
+      handleSave();
+      e.currentTarget.value = '';
+    }
+  };
 
   return (
     <div
@@ -147,6 +154,10 @@ export const Question = ({
                 onChange={(e) => setEditedText(e.target.value)}
                 className=" border-gray-500 border-1 px-2 py-1 rounded w-3/5"
                 onClick={(e) => e.stopPropagation()}
+                onKeyDown={activeEnter}
+                onCompositionStart={() => setIsComposing(true)}
+                onCompositionEnd={() => setIsComposing(false)}
+        
               />
               <div className="">
                 <button

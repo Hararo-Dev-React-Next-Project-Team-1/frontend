@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const API_PORT = 3000;
+
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: `${window.location.protocol}//${window.location.hostname}:${API_PORT}/api/`,
   headers: {
     'Content-Type': 'application/json',
   },
