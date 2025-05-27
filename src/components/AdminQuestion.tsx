@@ -16,7 +16,6 @@ export const AdminQuestion = ({
   roomTitle,
   onClick,
 }: QuestionProps) => {
-
   // const navigate = useNavigate();
   const handleBoxClick = () => {
     // Todo : 방 이동 처리
@@ -42,7 +41,7 @@ export const AdminQuestion = ({
   return (
     <div
       onClick={handleBoxClick}
-      className={`flex flex-row w-full h-fit py-4 px-8 rounded-2xl shadow-[0_0_4px_1px_rgba(51,196,168,0.75)] 
+      className={`flex flex-row w-full h-fit py-4 px-8 rounded-2xl bg-white shadow-[0_0_4px_1px_rgba(51,196,168,0.75)] 
         ${isAdmin ? 'cursor-pointer border-[var(--color-primary)] bg-[#E1F4F0]' : 'bg-white'}
       `}
     >
