@@ -108,12 +108,6 @@ const RoomAdmin = () => {
       e.preventDefault();
       e.returnValue = '';
     };
-    const handleLikes = ({ questionId, likes }: { questionId: number, likes:number }) =>{
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.question_id === questionId ? { ...q, likes:likes } : q
-        )
-      )};
 
     // 질문 수정
     const handleUpdate = ({ question }: { question: QuestionType }) => {
@@ -155,8 +149,6 @@ const RoomAdmin = () => {
       questionId: number;
       likes: number;
     }) => {
-      console.log('걸리니??');
-
       setQuestions((prev) => {
         const updated = prev.map((q) => {
           if (String(q.question_id) === String(questionId)) {
