@@ -170,10 +170,28 @@ const RoomStudent = () => {
       });
     };
 
+    const handleCheck = ({ question_id }: { question_id: number }) => {
+      setQesList((prev) => {
+        const updated = prev.filter(
+          (q) => String(q.question_id) !== String(question_id)
+        );
+
+        return isRecentRef.current
+          ? sortedByCreatedAt(updated, highlightedIdRef.current)
+          : sortedByLikes(updated, highlightedIdRef.current);
+      });
+
+      if (highlightedId === String(question_id)) {
+        setHighlightedId(null);
+      }
+    };
+
     socket.on('receiveQuestion', handleReceiveQuestion);
     socket.on('updateQuestion', onUpdated);
     socket.on('deleteQuestion', onDeleted);
     socket.on('updateLikes', handleLikes);
+
+    socket.on('checkQuestion', handleCheck);
 
     socket.on('receiveHighlight', (data: { question_id: string }) => {
       setHighlightedId(data.question_id);
@@ -185,6 +203,7 @@ const RoomStudent = () => {
       socket.off('deleteQuestion', onDeleted);
       socket.off('updateLikes', handleLikes);
       socket.off('receiveHighlight');
+      socket.off('checkQuestion', handleCheck);
     };
   }, [socket]);
 
