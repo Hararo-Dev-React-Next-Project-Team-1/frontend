@@ -14,7 +14,7 @@ import { useSearchParams } from 'react-router-dom';
 import socket from '../lib/socket.ts';
 
 interface QuestionProps extends QuestionType {
-  checkClick?: (questions_id: string) => void;
+  checkClick: (questions_id: string) => void;
   isLecturer: boolean;
   visitorId?: string;
   roomSocketId?: string | null;
@@ -112,11 +112,11 @@ export const Question = ({
     });
   };
 
-  const gun = () => {
-    if(checkClick){
-      checkClick(question_id)
-    }
-  }
+  // const gun = () => {
+  //   if(checkClick){
+  //     checkClick(question_id)
+  //   }
+  // }
 
   return (
     <div
@@ -221,7 +221,7 @@ export const Question = ({
           {isLecturer && (
             <div
               className="w-6 h-5 mr-2 cursor-pointer relative"
-              onClick={() => gun()}
+              onClick={() => checkClick(question_id)}
             >
               <CheckSmall />
             </div>

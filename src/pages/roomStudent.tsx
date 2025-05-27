@@ -1,16 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import RoomHeader from '../components/RoomHeader.tsx';
 import Sorting from '../assets/Sorting.svg?react';
 import ChatInput from '../components/ChatInput.tsx';
 import Link from '../assets/Link.svg?react';
 import { Question } from '../components/Question.tsx';
 import {
+  answerQuestion,
   getQuestionlist,
   postQuestion,
   type QuestionType,
 } from '../apis/questions.ts';
-import { useSearchParams } from 'react-router-dom';
-import { downloadFile, getRoomInfo } from '../apis/room.ts';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { downloadFile, exitRoom, getRoomInfo } from '../apis/room.ts';
 import socket from '../lib/socket.ts';
 
 type Room = {
@@ -28,7 +29,13 @@ const RoomStudent = () => {
   const [qesList, setQesList] = useState<QuestionType[]>([]);
 
   const [userChat, setUserChat] = useState('');
-  const [isLive, setLive] = useState(false);
+  const [connected, setConnected] = useState(false);
+  const [isRecent, setIsRecent] = useState(true);
+  const isRecentRef = useRef(isRecent);
+  useEffect(() => {
+    isRecentRef.current = isRecent;
+  }, [isRecent]);
+
   const [roomInfo, setRoomInfo] = useState<Room>({
     id: '-1',
     code: '-1',
@@ -39,6 +46,7 @@ const RoomStudent = () => {
   const [visitorId, setVisitorId] = useState('');
 
   const [roomSocketId, setRoomSocketId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRoomInfo = async () => {
@@ -146,20 +154,59 @@ const RoomStudent = () => {
     }
   };
 
-  // Live 버튼 클릭
-  const liveClick = () => {
-    // Todo : 라이브 재생 기능
-    setLive(true);
+  // 질문 정렬 기능
+  const sortedByCreatedAt = (questions: QuestionType[]) => {
+    return [...questions].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
   };
-  // 닫기 버튼 클릭
-  const closeClick = () => {
-    console.log('closeClick');
+  const sortedByLikes = (questions: QuestionType[]) => {
+    return [...questions].sort(
+      (a, b) => parseInt(String(b.likes)) - parseInt(String(a.likes))
+    );
   };
-  // view as participant 버튼 클릭
-  const viewClick = () => {
-    console.log('viewClick');
+  useEffect(() => {
+    if (isRecent) {
+      setQesList(sortedByCreatedAt(qesList));
+    } else {
+      setQesList(sortedByLikes(qesList));
+    }
+  }, [isRecent]);
+
+  const clickCheck = async (questionId: number) => {
+    if (roomId && questionId) {
+      const res = await answerQuestion(roomId, questionId);
+      if (res) {
+        const updated = await getQuestionlist(parseInt(roomId));
+        if (updated) {
+          if (isRecent) {
+            setQesList(sortedByCreatedAt(updated));
+          } else {
+            setQesList(sortedByLikes(updated));
+          }
+        }
+      }
+    }
   };
 
+  const leaveRoom = () => {
+    if (!connected || !roomSocketId) return;
+
+    socket.emit('leaveRoom', { roomSocketId });
+    setConnected(false);
+    setRoomSocketId(null);
+  };
+
+  const closeClick = async () => {
+    if (roomId) {
+      if (confirm('질문방을 닫으시겠습니까 ?')) {
+        await exitRoom(roomId);
+        leaveRoom();
+        navigate('/');
+      }
+    }
+  };
 
   return (
     <div className="w-full flex flex-col items-center py-20 gap-12">
@@ -176,9 +223,10 @@ const RoomStudent = () => {
               <div
                 className="rounded-xl flex items-center relative
               px-14 py-3 font-medium border border-[#CFCFCF] cursor-pointer"
+                onClick={() => setIsRecent(!isRecent)}
               >
                 <Sorting className="absolute left-7" />
-                <span>Recent</span>
+                <span className="min-w-14">{isRecent ? 'Recent' : 'Likes'}</span>
               </div>
               <div
                 className="rounded-xl flex items-center relative text-[#289983]
@@ -200,6 +248,7 @@ const RoomStudent = () => {
                 isLecturer={false}
                 visitorId={visitorId}
                 roomSocketId={roomSocketId}
+                checkClick={clickCheck}
               />
             ))}
             {(!qesList || qesList.length === 0) && (
@@ -210,6 +259,13 @@ const RoomStudent = () => {
           </div>
         </div>
       </div>
+      <button
+        className="text-center p-4 text-[16px] font-semibold
+    text-white rounded-full bg-[var(--color-primary)] cursor-pointer fixed bottom-6 right-6 shadow-lg hover:scale-105 transition z-50"
+        onClick={closeClick}
+      >
+        나가기
+      </button>
     </div>
   );
 };
